@@ -46,12 +46,12 @@ final List<FindingType> mammographyFindingCatalog = [
   ),
   const FindingType(
     id: 'fibrocystic_mastopathy',
-    label: 'Фиброзно-кистозная мастопатия (ФКМ)',
+    label: 'Фиброзно-кистозные изменения (ФКИ)',
     isPathology: true,
     requiresLocalization: false,
     descriptionOverrides: {
       DescriptionSlot.structure:
-          'Структура представлена диффузным чередованием фиброзного, железистого и кистозного компонентов, что соответствует фиброзно-кистозной мастопатии.',
+          'Структура представлена диффузным чередованием фиброзного, железистого и кистозного компонентов, что соответствует фиброзно-кистозным изменениям.',
     },
     biradsCode: 'BIRADS 2',
     followUpText: 'Динамический контроль через 1 год.',
