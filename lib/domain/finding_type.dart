@@ -1,3 +1,4 @@
+import 'birads_category.dart';
 import 'description_slot.dart';
 import 'quadrant.dart';
 
@@ -23,41 +24,43 @@ class FindingType {
   /// Показывать ли селектор квадранта при добавлении находки.
   final bool requiresLocalization;
 
+  /// Показывать ли поле ввода размера образования при добавлении находки.
+  final bool requiresSize;
+
   /// Переопределения строк-чеклиста блока "Описание". Строка может
-  /// содержать плейсхолдер `{quadrant}`, который будет заменён на
-  /// текстовую форму выбранного квадранта.
+  /// содержать плейсхолдеры `{quadrant}` и `{size}`, которые будут заменены
+  /// на соответствующие значения из [SelectedFinding].
   final Map<DescriptionSlot, String> descriptionOverrides;
 
-  /// Код BI-RADS, используемый при построении "Заключения".
+  /// Категория BI-RADS, к которой относится находка.
   /// `null` — находка не добавляет отдельную строку в заключение (Норма).
-  final String? biradsCode;
+  final BiRadsCategory? category;
 
   /// Дополнительная рекомендация, специфичная для находки
   /// (например, дообследование при локальной асимметрии).
   final String? recommendationFragment;
-
-  /// Текст интервала динамического контроля по умолчанию для этой находки.
-  final String? followUpText;
 
   const FindingType({
     required this.id,
     required this.label,
     required this.isPathology,
     required this.requiresLocalization,
+    this.requiresSize = false,
     this.descriptionOverrides = const {},
-    this.biradsCode,
+    this.category,
     this.recommendationFragment,
-    this.followUpText,
   });
 
-  /// Строка для "Заключения", например "ЛОКАЛЬНАЯ АСИММЕТРИЯ (BIRADS 0)".
+  /// Строка для "Заключения", например "ЛОКАЛЬНАЯ АСИММЕТРИЯ (BIRADS 4а)".
   String get conclusionText =>
-      biradsCode == null ? label.toUpperCase() : '${label.toUpperCase()} ($biradsCode)';
+      category == null ? label.toUpperCase() : '${label.toUpperCase()} (${category!.code})';
 
-  String? overrideFor(DescriptionSlot slot, {Quadrant? quadrant}) {
+  String? overrideFor(DescriptionSlot slot, {Quadrant? quadrant, String? size}) {
     final template = descriptionOverrides[slot];
     if (template == null) return null;
-    if (quadrant == null) return template;
-    return template.replaceAll('{quadrant}', quadrant.inTextForm);
+    var result = template;
+    if (quadrant != null) result = result.replaceAll('{quadrant}', quadrant.inTextForm);
+    result = result.replaceAll('{size}', size?.isNotEmpty == true ? size! : '__ мм');
+    return result;
   }
 }

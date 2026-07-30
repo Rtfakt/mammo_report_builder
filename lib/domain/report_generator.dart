@@ -1,7 +1,7 @@
+import 'birads_category.dart';
 import 'breast_exam_side.dart';
 import 'description_slot.dart';
 import 'generated_report.dart';
-import 'mammography_catalog.dart';
 import 'mammography_exam.dart';
 
 /// Чистая функция: MammographyExam -> готовый текст описания/заключения.
@@ -48,7 +48,11 @@ String _buildSideDescription(BreastExamSide side) {
 
   for (final finding in side.findings) {
     for (final slot in DescriptionSlot.values) {
-      final override = finding.findingType.overrideFor(slot, quadrant: finding.quadrant);
+      final override = finding.findingType.overrideFor(
+        slot,
+        quadrant: finding.quadrant,
+        size: finding.size,
+      );
       if (override != null) {
         slots[slot] = override;
       }
@@ -70,56 +74,34 @@ String _buildSideDescription(BreastExamSide side) {
   return sentences.join(' ');
 }
 
-class _ConclusionEntry {
-  final String key;
-  final String text;
-  const _ConclusionEntry(this.key, this.text);
-}
-
-List<_ConclusionEntry> _pathologyEntries(BreastExamSide side) {
-  final seen = <String>{};
-  final entries = <_ConclusionEntry>[];
+/// Определяет наивысшую категорию BI-RADS среди патологических находок стороны.
+/// Возвращает `null` если патологических находок нет.
+BiRadsCategory? _maxCategory(BreastExamSide side) {
+  BiRadsCategory? max;
   for (final finding in side.findings) {
-    if (!finding.findingType.isPathology) continue;
-    final key = '${finding.findingType.id}|${finding.findingType.biradsCode ?? ''}';
-    if (!seen.add(key)) continue;
-    entries.add(_ConclusionEntry(key, finding.findingType.conclusionText));
+    final cat = finding.findingType.category;
+    if (cat == null) continue;
+    if (max == null || cat.rank > max.rank) max = cat;
   }
-  return entries;
+  return max;
 }
 
 String _buildConclusion(MammographyExam exam) {
-  final rightEntries = _pathologyEntries(exam.right);
-  final leftEntries = _pathologyEntries(exam.left);
+  final rightCat = _maxCategory(exam.right);
+  final leftCat = _maxCategory(exam.left);
 
-  if (rightEntries.isEmpty && leftEntries.isEmpty) {
+  if (rightCat == null && leftCat == null) {
     return 'Без очаговой патологии.\nBIRADS 1 справа и слева.';
   }
 
-  final lines = <String>[];
-  final usedRight = <int>{};
-  final usedLeft = <int>{};
+  final rightLabel = rightCat?.code ?? 'BIRADS 1';
+  final leftLabel = leftCat?.code ?? 'BIRADS 1';
 
-  for (var i = 0; i < rightEntries.length; i++) {
-    for (var j = 0; j < leftEntries.length; j++) {
-      if (usedLeft.contains(j)) continue;
-      if (rightEntries[i].key == leftEntries[j].key) {
-        lines.add('${rightEntries[i].text} справа и слева.');
-        usedRight.add(i);
-        usedLeft.add(j);
-        break;
-      }
-    }
+  if (rightLabel == leftLabel) {
+    return '$rightLabel справа и слева.';
   }
 
-  for (var i = 0; i < rightEntries.length; i++) {
-    if (!usedRight.contains(i)) lines.add('${rightEntries[i].text} справа.');
-  }
-  for (var j = 0; j < leftEntries.length; j++) {
-    if (!usedLeft.contains(j)) lines.add('${leftEntries[j].text} слева.');
-  }
-
-  return lines.join('\n');
+  return '$rightLabel справа.\n$leftLabel слева.';
 }
 
 String _buildRecommendations(MammographyExam exam) {
@@ -137,17 +119,18 @@ String _buildRecommendations(MammographyExam exam) {
     for (final finding in side.findings) {
       final rec = finding.findingType.recommendationFragment;
       if (rec != null) recommendations.add(rec);
-      final followUp = finding.findingType.followUpText;
-      if (followUp != null) followUps.add(followUp);
     }
   }
 
-  // Ни одной находки не добавлено ни с одной стороны — по умолчанию это
-  // равнозначно "Норме", поэтому подставляем стандартный интервал контроля
-  // без необходимости явно добавлять чип "Норма".
+  // followUpText берётся из максимальной категории BI-RADS каждой стороны
+  for (final side in [exam.right, exam.left]) {
+    final cat = _maxCategory(side);
+    if (cat?.followUpText != null) followUps.add(cat!.followUpText!);
+  }
+
+  // Если патологии нет — стандартный интервал контроля 1 год
   if (exam.right.findings.isEmpty && exam.left.findings.isEmpty) {
-    final defaultFollowUp = normaFinding.followUpText;
-    if (defaultFollowUp != null) followUps.add(defaultFollowUp);
+    followUps.add('Динамический контроль через 1 год.');
   }
 
   return [...recommendations, ...followUps].join('\n');

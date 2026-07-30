@@ -97,6 +97,7 @@ class ConstructorPage extends StatelessWidget {
     final finding = SelectedFinding(
       findingType: result.findingType,
       quadrant: result.quadrant,
+      size: result.size,
     );
 
     controller.update((exam) {
