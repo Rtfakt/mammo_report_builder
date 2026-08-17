@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../domain/benign_calcification_type.dart';
 import '../../domain/birads_category.dart';
 import '../../domain/breast_side.dart';
+import '../../domain/calcification_distribution.dart';
 import '../../domain/finding_type.dart';
 import '../../domain/mammography_catalog.dart';
 import '../../domain/quadrant.dart';
@@ -10,18 +12,22 @@ import '../../domain/quadrant.dart';
 /// Результат диалога "Добавить находку": сама находка, набор сторон,
 /// на которые её нужно добавить (обычно одна — текущая панель, но можно
 /// сразу отметить "обе стороны" для типового двустороннего случая),
-/// локализация и размер, если находка их требует.
+/// локализация, размер и детали кальцинатов, если находка их требует.
 class AddFindingResult {
   final FindingType findingType;
   final Set<BreastSide> sides;
   final Quadrant? quadrant;
   final String? size;
+  final CalcificationDistribution? calcificationDistribution;
+  final List<BenignCalcificationType> calcificationTypes;
 
   const AddFindingResult({
     required this.findingType,
     required this.sides,
     this.quadrant,
     this.size,
+    this.calcificationDistribution,
+    this.calcificationTypes = const [],
   });
 }
 
@@ -49,6 +55,8 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
   FindingType? _selectedFinding;
   late Set<BreastSide> _sides;
   Quadrant? _quadrant;
+  CalcificationDistribution? _distribution;
+  final Set<BenignCalcificationType> _calcificationTypes = {};
   final TextEditingController _sizeController = TextEditingController();
 
   @override
@@ -65,12 +73,32 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
 
   bool get _isOnStep1 => _selectedCategory == null;
 
+  /// На шаге 2 выбрана конкретная находка — список патологий скрыт.
+  bool get _isConfiguringFinding => _selectedFinding != null;
+
+  bool get _hasFindingList =>
+      _selectedCategory != null &&
+      findingsByCategory(_selectedCategory!).length > 1;
+
+  String get _dialogTitle {
+    if (_isOnStep1) return 'Категория BI-RADS';
+    final finding = _selectedFinding;
+    if (finding != null) return finding.label;
+    return 'Выберите находку';
+  }
+
   bool get _canConfirm {
     final finding = _selectedFinding;
     if (finding == null) return false;
     if (_sides.isEmpty) return false;
     if (finding.requiresLocalization && _quadrant == null) return false;
-    if (finding.requiresSize && !_isValidSize(_sizeController.text)) return false;
+    if (finding.requiresSize && !_isValidSize(_sizeController.text)) {
+      return false;
+    }
+    if (finding.requiresCalcificationDetails) {
+      if (_distribution == null) return false;
+      if (_calcificationTypes.isEmpty) return false;
+    }
     return true;
   }
 
@@ -96,6 +124,8 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
       _selectedCategory = category;
       _selectedFinding = null;
       _quadrant = null;
+      _distribution = null;
+      _calcificationTypes.clear();
       _sizeController.clear();
 
       // BI-RADS 6 содержит единственную находку — выбираем её автоматически
@@ -105,11 +135,35 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
     });
   }
 
+  void _selectFinding(FindingType finding) {
+    setState(() {
+      _selectedFinding = finding;
+      _quadrant = null;
+      _distribution = null;
+      _calcificationTypes.clear();
+      _sizeController.clear();
+    });
+  }
+
   void _goBack() {
+    // Со списка патологий — назад к категориям; с полей находки — к списку.
+    if (_isConfiguringFinding && _hasFindingList) {
+      setState(() {
+        _selectedFinding = null;
+        _quadrant = null;
+        _distribution = null;
+        _calcificationTypes.clear();
+        _sizeController.clear();
+      });
+      return;
+    }
+
     setState(() {
       _selectedCategory = null;
       _selectedFinding = null;
       _quadrant = null;
+      _distribution = null;
+      _calcificationTypes.clear();
       _sizeController.clear();
     });
   }
@@ -123,14 +177,14 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
             IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: _goBack,
-              tooltip: 'Назад к выбору категории',
+              tooltip: _isConfiguringFinding && _hasFindingList
+                  ? 'Назад к выбору находки'
+                  : 'Назад к выбору категории',
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
             ),
           if (!_isOnStep1) const SizedBox(width: 8),
-          Expanded(
-            child: Text(_isOnStep1 ? 'Категория BI-RADS' : 'Выберите находку'),
-          ),
+          Expanded(child: Text(_dialogTitle)),
         ],
       ),
       content: SizedBox(
@@ -144,7 +198,7 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Отмена'),
         ),
-        if (!_isOnStep1)
+        if (_isConfiguringFinding)
           FilledButton(
             onPressed: _canConfirm ? _confirm : null,
             child: const Text('Добавить'),
@@ -177,15 +231,21 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
   }
 
   Widget _buildStep2() {
+    final selected = _selectedFinding;
+    if (selected != null) {
+      return _buildFindingFields(selected);
+    }
+    return _buildFindingList();
+  }
+
+  Widget _buildFindingList() {
     final category = _selectedCategory!;
     final findings = findingsByCategory(category);
-    final selected = _selectedFinding;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Заголовок выбранной категории
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
@@ -201,41 +261,36 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
           ),
         ),
         const SizedBox(height: 16),
+        const Text(
+          'Патология / Заключение',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: findings.map((finding) {
+            return ChoiceChip(
+              label: Text(finding.label),
+              selected: false,
+              onSelected: (_) => _selectFinding(finding),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
 
-        // Список находок в категории (если больше одной)
-        if (findings.length > 1) ...[
-          const Text('Патология / Заключение', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: findings.map((finding) {
-              final isSelected = finding.id == selected?.id;
-              return ChoiceChip(
-                label: Text(finding.label),
-                selected: isSelected,
-                onSelected: (_) {
-                  setState(() {
-                    _selectedFinding = finding;
-                    _quadrant = null;
-                    _sizeController.clear();
-                  });
-                },
-              );
-            }).toList(),
+  Widget _buildFindingFields(FindingType selected) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (selected.requiresSize) ...[
+          const Text(
+            'Размер образования',
+            style: TextStyle(fontWeight: FontWeight.w600),
           ),
-        ] else if (findings.length == 1) ...[
-          // Единственная находка — просто показываем название
-          Text(
-            findings.first.label,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ],
-
-        // Поле размера
-        if (selected != null && selected.requiresSize) ...[
-          const SizedBox(height: 20),
-          const Text('Размер образования', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           TextField(
             controller: _sizeController,
@@ -254,9 +309,8 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
           ),
         ],
 
-        // Сторона
-        if (selected != null && selected.isPathology) ...[
-          const SizedBox(height: 20),
+        if (selected.isPathology) ...[
+          if (selected.requiresSize) const SizedBox(height: 20),
           const Text('Сторона', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Wrap(
@@ -280,10 +334,62 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
           ),
         ],
 
-        // Локализация
-        if (selected != null && selected.requiresLocalization) ...[
+        if (selected.requiresCalcificationDetails) ...[
+          if (selected.requiresSize || selected.isPathology)
+            const SizedBox(height: 20),
+          const Text(
+            'Распределение',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: CalcificationDistribution.values.map((value) {
+              return ChoiceChip(
+                label: Text(value.label),
+                selected: _distribution == value,
+                onSelected: (_) => setState(() => _distribution = value),
+              );
+            }).toList(),
+          ),
           const SizedBox(height: 20),
-          const Text('Локализация', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text(
+            'Тип кальцинатов',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: BenignCalcificationType.values.map((type) {
+              final isChecked = _calcificationTypes.contains(type);
+              return FilterChip(
+                label: Text(type.label),
+                selected: isChecked,
+                onSelected: (checked) {
+                  setState(() {
+                    if (checked) {
+                      _calcificationTypes.add(type);
+                    } else {
+                      _calcificationTypes.remove(type);
+                    }
+                  });
+                },
+              );
+            }).toList(),
+          ),
+        ],
+
+        if (selected.requiresLocalization) ...[
+          if (selected.requiresSize ||
+              selected.isPathology ||
+              selected.requiresCalcificationDetails)
+            const SizedBox(height: 20),
+          const Text(
+            'Локализация',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 8),
           DropdownButtonFormField<Quadrant>(
             initialValue: _quadrant,
@@ -307,6 +413,14 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
         sides: _sides,
         quadrant: _quadrant,
         size: finding.requiresSize ? '${_sizeController.text.trim()} мм' : null,
+        calcificationDistribution: finding.requiresCalcificationDetails
+            ? _distribution
+            : null,
+        calcificationTypes: finding.requiresCalcificationDetails
+            ? BenignCalcificationType.values
+                  .where(_calcificationTypes.contains)
+                  .toList()
+            : const [],
       ),
     );
   }

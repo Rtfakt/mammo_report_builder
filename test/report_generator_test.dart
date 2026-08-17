@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mammo_report_builder/domain/acr_density.dart';
+import 'package:mammo_report_builder/domain/benign_calcification_type.dart';
 import 'package:mammo_report_builder/domain/breast_exam_side.dart';
 import 'package:mammo_report_builder/domain/breast_side.dart';
+import 'package:mammo_report_builder/domain/calcification_distribution.dart';
 import 'package:mammo_report_builder/domain/mammography_catalog.dart';
 import 'package:mammo_report_builder/domain/mammography_exam.dart';
 import 'package:mammo_report_builder/domain/quadrant.dart';
@@ -10,76 +12,189 @@ import 'package:mammo_report_builder/domain/selected_finding.dart';
 
 void main() {
   group('generateMammographyReport', () {
-    test('обе стороны без находок -> норма, BIRADS 1, без доп. рекомендаций по УЗИ', () {
-      final exam = MammographyExam(
-        right: const BreastExamSide(side: BreastSide.right, density: AcrDensity.b),
-        left: const BreastExamSide(side: BreastSide.left, density: AcrDensity.b),
-      );
+    test(
+      'обе стороны без находок -> норма, BIRADS 1, без доп. рекомендаций по УЗИ',
+      () {
+        final exam = MammographyExam(
+          right: const BreastExamSide(
+            side: BreastSide.right,
+            density: AcrDensity.b,
+          ),
+          left: const BreastExamSide(
+            side: BreastSide.left,
+            density: AcrDensity.b,
+          ),
+        );
 
-      final report = generateMammographyReport(exam);
+        final report = generateMammographyReport(exam);
 
-      expect(report.conclusionText, 'Без очаговой патологии.\nBIRADS 1 справа и слева.');
-      expect(report.recommendationText, contains('Динамический контроль через 1 год.'));
-      expect(report.recommendationText, isNot(contains('УЗИ молочных желёз')));
-      expect(report.descriptionText, contains('ПРАВАЯ МОЛОЧНАЯ ЖЕЛЕЗА'));
-      expect(report.descriptionText, contains('ЛЕВАЯ МОЛОЧНАЯ ЖЕЛЕЗА'));
-    });
+        expect(
+          report.conclusionText,
+          'Без очаговой патологии.\nBIRADS 1 справа и слева.',
+        );
+        expect(
+          report.recommendationText,
+          contains('Динамический контроль через 1 год.'),
+        );
+        expect(
+          report.recommendationText,
+          isNot(contains('УЗИ молочных желёз')),
+        );
+        expect(report.descriptionText, contains('ПРАВАЯ МОЛОЧНАЯ ЖЕЛЕЗА'));
+        expect(report.descriptionText, contains('ЛЕВАЯ МОЛОЧНАЯ ЖЕЛЕЗА'));
+      },
+    );
 
-    test('одинаковая находка ACR-D с обеих сторон -> объединяются в одну строку заключения, как в реальном примере', () {
-      final finding = SelectedFinding(findingType: findingById('fibrocystic_mastopathy'));
-      final exam = MammographyExam(
-        right: BreastExamSide(side: BreastSide.right, density: AcrDensity.d, findings: [finding]),
-        left: BreastExamSide(side: BreastSide.left, density: AcrDensity.d, findings: [finding]),
-      );
+    test(
+      'одинаковая находка ACR-D с обеих сторон -> объединяются в одну строку заключения, как в реальном примере',
+      () {
+        final finding = SelectedFinding(
+          findingType: findingById('fibrocystic_mastopathy'),
+        );
+        final exam = MammographyExam(
+          right: BreastExamSide(
+            side: BreastSide.right,
+            density: AcrDensity.d,
+            findings: [finding],
+          ),
+          left: BreastExamSide(
+            side: BreastSide.left,
+            density: AcrDensity.d,
+            findings: [finding],
+          ),
+        );
 
-      final report = generateMammographyReport(exam);
+        final report = generateMammographyReport(exam);
 
-      expect(
-        report.conclusionText,
-        'ФИБРОЗНО-КИСТОЗНАЯ МАСТОПАТИЯ (ФКМ) (BIRADS 2) справа и слева.',
-      );
-      expect(report.recommendationText, contains('УЗИ молочных желёз (рентгенологически плотные железы).'));
-      expect(
-        report.descriptionText,
-        contains('Тип плотности ACR-D (железистый компонент более 75%), соответствует возрасту.'),
-      );
-    });
+        expect(
+          report.conclusionText,
+          'ФИБРОЗНО-КИСТОЗНАЯ МАСТОПАТИЯ (ФКМ) (BIRADS 2) справа и слева.',
+        );
+        expect(
+          report.recommendationText,
+          contains('УЗИ молочных желёз (рентгенологически плотные железы).'),
+        );
+        expect(
+          report.descriptionText,
+          contains(
+            'Тип плотности ACR-D (железистый компонент более 75%), соответствует возрасту.',
+          ),
+        );
+      },
+    );
 
-    test('локальная асимметрия только справа с локализацией -> раздельная строка + текст с квадрантом', () {
-      final finding = SelectedFinding(
-        findingType: findingById('local_asymmetry'),
-        quadrant: Quadrant.upperOuter,
-      );
-      final exam = MammographyExam(
-        right: BreastExamSide(side: BreastSide.right, density: AcrDensity.c, findings: [finding]),
-        left: const BreastExamSide(side: BreastSide.left, density: AcrDensity.c),
-      );
+    test(
+      'локальная асимметрия только справа с локализацией -> раздельная строка + текст с квадрантом',
+      () {
+        final finding = SelectedFinding(
+          findingType: findingById('local_asymmetry'),
+          quadrant: Quadrant.upperOuter,
+        );
+        final exam = MammographyExam(
+          right: BreastExamSide(
+            side: BreastSide.right,
+            density: AcrDensity.c,
+            findings: [finding],
+          ),
+          left: const BreastExamSide(
+            side: BreastSide.left,
+            density: AcrDensity.c,
+          ),
+        );
 
-      final report = generateMammographyReport(exam);
+        final report = generateMammographyReport(exam);
 
-      expect(report.conclusionText, 'ЛОКАЛЬНАЯ АСИММЕТРИЯ (BIRADS 0) справа.');
-      expect(
-        report.descriptionText,
-        contains('определяется локальная асимметрия ткани в проекции верхне-наружного квадранта'),
-      );
-      expect(
-        report.recommendationText,
-        contains('Дообследование: прицельная рентгенография с компрессией'),
-      );
-    });
+        expect(
+          report.conclusionText,
+          'ЛОКАЛЬНАЯ АСИММЕТРИЯ (BIRADS 0) справа.',
+        );
+        expect(
+          report.descriptionText,
+          contains(
+            'определяется локальная асимметрия ткани в проекции верхне-наружного квадранта',
+          ),
+        );
+        expect(
+          report.recommendationText,
+          contains('Дообследование: прицельная рентгенография с компрессией'),
+        );
+      },
+    );
 
-    test('разные находки на разных сторонах -> две отдельные строки заключения', () {
-      final rightFinding = SelectedFinding(findingType: findingById('fatty_involution'));
-      final leftFinding = SelectedFinding(findingType: findingById('fibrocystic_mastopathy'));
-      final exam = MammographyExam(
-        right: BreastExamSide(side: BreastSide.right, density: AcrDensity.a, findings: [rightFinding]),
-        left: BreastExamSide(side: BreastSide.left, density: AcrDensity.b, findings: [leftFinding]),
-      );
+    test(
+      'разные находки на разных сторонах -> две отдельные строки заключения',
+      () {
+        final rightFinding = SelectedFinding(
+          findingType: findingById('fatty_involution'),
+        );
+        final leftFinding = SelectedFinding(
+          findingType: findingById('fibrocystic_mastopathy'),
+        );
+        final exam = MammographyExam(
+          right: BreastExamSide(
+            side: BreastSide.right,
+            density: AcrDensity.a,
+            findings: [rightFinding],
+          ),
+          left: BreastExamSide(
+            side: BreastSide.left,
+            density: AcrDensity.b,
+            findings: [leftFinding],
+          ),
+        );
 
-      final report = generateMammographyReport(exam);
+        final report = generateMammographyReport(exam);
 
-      expect(report.conclusionText, contains('ФИБРОЗНО-ЖИРОВАЯ ИНВОЛЮЦИЯ (ФЖИ) (BIRADS 2) справа.'));
-      expect(report.conclusionText, contains('ФИБРОЗНО-КИСТОЗНАЯ МАСТОПАТИЯ (ФКМ) (BIRADS 2) слева.'));
-    });
+        expect(
+          report.conclusionText,
+          contains('ФИБРОЗНО-ЖИРОВАЯ ИНВОЛЮЦИЯ (ФЖИ) (BIRADS 2) справа.'),
+        );
+        expect(
+          report.conclusionText,
+          contains('ФИБРОЗНО-КИСТОЗНАЯ МАСТОПАТИЯ (ФКМ) (BIRADS 2) слева.'),
+        );
+      },
+    );
+
+    test(
+      'доброкачественные кальцинаты подставляют распределение и тип в описание и заключение',
+      () {
+        final finding = SelectedFinding(
+          findingType: findingById('birads2_calcifications'),
+          calcificationDistribution: CalcificationDistribution.diffuse,
+          calcificationTypes: const [
+            BenignCalcificationType.vascular,
+            BenignCalcificationType.round,
+          ],
+        );
+        final exam = MammographyExam(
+          right: BreastExamSide(
+            side: BreastSide.right,
+            density: AcrDensity.b,
+            findings: [finding],
+          ),
+          left: const BreastExamSide(
+            side: BreastSide.left,
+            density: AcrDensity.b,
+          ),
+        );
+
+        final report = generateMammographyReport(exam);
+
+        expect(
+          report.descriptionText,
+          contains(
+            'Кальцинаты доброкачественные - да (распределение диффузное, сосудистые, круглые), злокачественные - нет.',
+          ),
+        );
+        expect(report.descriptionText, contains('Обызвествления сосудов да.'));
+        expect(
+          report.conclusionText,
+          contains(
+            'Доброкачественные обызвествления молочных желёз (сосудистые, круглые, распределение диффузное).',
+          ),
+        );
+      },
+    );
   });
 }

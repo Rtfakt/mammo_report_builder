@@ -1,4 +1,6 @@
+import 'benign_calcification_type.dart';
 import 'birads_category.dart';
+import 'calcification_distribution.dart';
 import 'description_slot.dart';
 import 'quadrant.dart';
 
@@ -6,8 +8,8 @@ import 'quadrant.dart';
 ///
 /// Чтобы добавить новую находку — достаточно добавить один экземпляр
 /// [FindingType] в `mammography_catalog.dart`. UI и генератор текста
-/// не нужно менять: видимость полей "Сторона" и "Локализация" и содержимое
-/// текста управляются флагами и шаблонами ниже.
+/// не нужно менять: видимость полей "Сторона"/"Локализация"/"Размер"/
+/// "Распределение" и содержимое текста управляются флагами и шаблонами ниже.
 class FindingType {
   /// Стабильный идентификатор для хранения/сериализации (не меняйте после
   /// того как находка уже где-то сохранена в истории).
@@ -27,9 +29,13 @@ class FindingType {
   /// Показывать ли поле ввода размера образования при добавлении находки.
   final bool requiresSize;
 
+  /// Показывать ли поля распределения и типа кальцинатов.
+  final bool requiresCalcificationDetails;
+
   /// Переопределения строк-чеклиста блока "Описание". Строка может
-  /// содержать плейсхолдеры `{quadrant}` и `{size}`, которые будут заменены
-  /// на соответствующие значения из [SelectedFinding].
+  /// содержать плейсхолдеры `{quadrant}`, `{size}`, `{distribution}` и
+  /// `{calcificationType}`, которые будут заменены на соответствующие
+  /// значения из [SelectedFinding].
   final Map<DescriptionSlot, String> descriptionOverrides;
 
   /// Категория BI-RADS, к которой относится находка.
@@ -41,7 +47,8 @@ class FindingType {
   final String? recommendationFragment;
 
   /// Шаблон текста для раздела ЗАКЛЮЧЕНИЕ. Поддерживает плейсхолдеры
-  /// `{side}` (родительный падеж: "правой"/"левой"), `{quadrant}`, `{size}`.
+  /// `{side}` (родительный падеж: "правой"/"левой"), `{quadrant}`, `{size}`,
+  /// `{distribution}`, `{calcificationType}`.
   final String? conclusionFragment;
 
   const FindingType({
@@ -50,6 +57,7 @@ class FindingType {
     required this.isPathology,
     required this.requiresLocalization,
     this.requiresSize = false,
+    this.requiresCalcificationDetails = false,
     this.descriptionOverrides = const {},
     this.category,
     this.recommendationFragment,
@@ -62,21 +70,68 @@ class FindingType {
     required String sideLabel,
     Quadrant? quadrant,
     String? size,
+    CalcificationDistribution? calcificationDistribution,
+    List<BenignCalcificationType> calcificationTypes = const [],
   }) {
     if (conclusionFragment == null) return null;
-    var result = conclusionFragment!;
-    result = result.replaceAll('{side}', sideLabel);
-    if (quadrant != null) result = result.replaceAll('{quadrant}', quadrant.inTextForm);
-    result = result.replaceAll('{size}', size?.isNotEmpty == true ? size! : '__ мм');
-    return result;
+    return _applyPlaceholders(
+      conclusionFragment!,
+      sideLabel: sideLabel,
+      quadrant: quadrant,
+      size: size,
+      calcificationDistribution: calcificationDistribution,
+      calcificationTypes: calcificationTypes,
+    );
   }
 
-  String? overrideFor(DescriptionSlot slot, {Quadrant? quadrant, String? size}) {
+  String? overrideFor(
+    DescriptionSlot slot, {
+    Quadrant? quadrant,
+    String? size,
+    CalcificationDistribution? calcificationDistribution,
+    List<BenignCalcificationType> calcificationTypes = const [],
+  }) {
     final template = descriptionOverrides[slot];
     if (template == null) return null;
+    return _applyPlaceholders(
+      template,
+      sideLabel: '',
+      quadrant: quadrant,
+      size: size,
+      calcificationDistribution: calcificationDistribution,
+      calcificationTypes: calcificationTypes,
+    );
+  }
+
+  String _applyPlaceholders(
+    String template, {
+    required String sideLabel,
+    Quadrant? quadrant,
+    String? size,
+    CalcificationDistribution? calcificationDistribution,
+    required List<BenignCalcificationType> calcificationTypes,
+  }) {
     var result = template;
-    if (quadrant != null) result = result.replaceAll('{quadrant}', quadrant.inTextForm);
-    result = result.replaceAll('{size}', size?.isNotEmpty == true ? size! : '__ мм');
+    result = result.replaceAll('{side}', sideLabel);
+    if (quadrant != null) {
+      result = result.replaceAll('{quadrant}', quadrant.inTextForm);
+    }
+    result = result.replaceAll(
+      '{size}',
+      size?.isNotEmpty == true ? size! : '__ мм',
+    );
+    if (calcificationDistribution != null) {
+      result = result.replaceAll(
+        '{distribution}',
+        calcificationDistribution.inTextForm,
+      );
+    }
+    if (calcificationTypes.isNotEmpty) {
+      result = result.replaceAll(
+        '{calcificationType}',
+        calcificationTypes.map((t) => t.inTextForm).join(', '),
+      );
+    }
     return result;
   }
 }

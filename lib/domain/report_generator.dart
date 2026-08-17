@@ -1,3 +1,4 @@
+import 'benign_calcification_type.dart';
 import 'birads_category.dart';
 import 'breast_exam_side.dart';
 import 'description_slot.dart';
@@ -43,7 +44,8 @@ GeneratedReport generateMammographyReport(MammographyExam exam) {
 
 String _buildSideDescription(BreastExamSide side) {
   final slots = <DescriptionSlot, String>{
-    for (final slot in DescriptionSlot.values) slot: slot.defaultText(side.density),
+    for (final slot in DescriptionSlot.values)
+      slot: slot.defaultText(side.density),
   };
 
   for (final finding in side.findings) {
@@ -52,10 +54,15 @@ String _buildSideDescription(BreastExamSide side) {
         slot,
         quadrant: finding.quadrant,
         size: finding.size,
+        calcificationDistribution: finding.calcificationDistribution,
+        calcificationTypes: finding.calcificationTypes,
       );
       if (override != null) {
         slots[slot] = override;
       }
+    }
+    if (finding.calcificationTypes.contains(BenignCalcificationType.vascular)) {
+      slots[DescriptionSlot.vesselCalcification] = 'Обызвествления сосудов да.';
     }
   }
 
@@ -103,6 +110,8 @@ String _buildConclusion(MammographyExam exam) {
         sideLabel: side.side.genitiveLabel,
         quadrant: finding.quadrant,
         size: finding.size,
+        calcificationDistribution: finding.calcificationDistribution,
+        calcificationTypes: finding.calcificationTypes,
       );
       if (text != null && !findingTexts.contains(text)) {
         findingTexts.add(text);

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../domain/acr_density.dart';
 import '../../domain/breast_exam_side.dart';
 import '../../domain/quadrant.dart';
+import '../../domain/selected_finding.dart';
 
 /// Панель одной стороны молочной железы: плотность (если не управляется
 /// общим переключателем "одинаково с обеих сторон") + список находок.
@@ -33,13 +34,21 @@ class SidePanel extends StatelessWidget {
           children: [
             Text(
               data.side.label,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             if (showDensitySelector) ...[
-              Text('Плотность (ACR)', style: Theme.of(context).textTheme.labelLarge),
+              Text(
+                'Плотность (ACR)',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
               const SizedBox(height: 8),
-              _DensitySelector(value: data.density, onChanged: onDensityChanged),
+              _DensitySelector(
+                value: data.density,
+                onChanged: onDensityChanged,
+              ),
               const SizedBox(height: 16),
             ],
             Row(
@@ -59,9 +68,9 @@ class SidePanel extends StatelessWidget {
                 child: Text(
                   'Норма (находок не добавлено)',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
-                        fontStyle: FontStyle.italic,
-                      ),
+                    color: Theme.of(context).colorScheme.outline,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               )
             else
@@ -71,11 +80,7 @@ class SidePanel extends StatelessWidget {
                 children: [
                   for (var i = 0; i < data.findings.length; i++)
                     InputChip(
-                      label: Text(
-                        data.findings[i].quadrant == null
-                            ? data.findings[i].findingType.label
-                            : '${data.findings[i].findingType.label} · ${_shortQuadrant(data.findings[i].quadrant!)}',
-                      ),
+                      label: Text(_findingChipLabel(data.findings[i])),
                       onDeleted: () => onRemoveFinding(i),
                     ),
                 ],
@@ -84,6 +89,20 @@ class SidePanel extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _findingChipLabel(SelectedFinding finding) {
+    final parts = <String>[finding.findingType.label];
+    if (finding.quadrant != null) {
+      parts.add(_shortQuadrant(finding.quadrant!));
+    }
+    if (finding.calcificationDistribution != null) {
+      parts.add(finding.calcificationDistribution!.label.toLowerCase());
+    }
+    if (finding.calcificationTypes.isNotEmpty) {
+      parts.add(finding.calcificationTypes.map((t) => t.inTextForm).join(', '));
+    }
+    return parts.join(' · ');
   }
 
   String _shortQuadrant(Quadrant q) => q.label.split(' (').first;

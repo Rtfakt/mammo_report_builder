@@ -6,8 +6,8 @@ import 'finding_type.dart';
 ///
 /// Находки сгруппированы по категориям BI-RADS. Чтобы добавить новую
 /// находку — добавьте один [FindingType] с нужной [BiRadsCategory].
-/// UI (диалог выбора, показ "Сторона"/"Локализация"/"Размер") и генератор
-/// текста подхватят её автоматически.
+/// UI (диалог выбора, показ "Сторона"/"Локализация"/"Размер"/
+/// "Распределение") и генератор текста подхватят её автоматически.
 final List<FindingType> mammographyFindingCatalog = [
   // ─── Быстрые заключения (используются в "Частые заключения") ───
   const FindingType(
@@ -52,15 +52,17 @@ final List<FindingType> mammographyFindingCatalog = [
   ),
   const FindingType(
     id: 'birads2_calcifications',
-    label: 'Доброкачественные обызвествления',
+    label: 'Кальцинаты доброкачественные',
     isPathology: true,
     requiresLocalization: false,
+    requiresCalcificationDetails: true,
     descriptionOverrides: {
       DescriptionSlot.calcifications:
-          'Кальцинаты доброкачественные - да (распределение диффузное/региональное/единичное), злокачественные - нет.',
+          'Кальцинаты доброкачественные - да (распределение {distribution}, {calcificationType}), злокачественные - нет.',
     },
     category: BiRadsCategory.birads2,
-    conclusionFragment: 'Доброкачественные обызвествления молочных желёз.',
+    conclusionFragment:
+        'Доброкачественные обызвествления молочных желёз ({calcificationType}, распределение {distribution}).',
   ),
   const FindingType(
     id: 'birads2_intramammary_ln',

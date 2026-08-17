@@ -67,11 +67,7 @@ class ConstructorPage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  rightPanel,
-                  const SizedBox(height: 16),
-                  leftPanel,
-                ],
+                children: [rightPanel, const SizedBox(height: 16), leftPanel],
               ),
             );
           },
@@ -98,6 +94,8 @@ class ConstructorPage extends StatelessWidget {
       findingType: result.findingType,
       quadrant: result.quadrant,
       size: result.size,
+      calcificationDistribution: result.calcificationDistribution,
+      calcificationTypes: result.calcificationTypes,
     );
 
     controller.update((exam) {
@@ -136,10 +134,9 @@ class _ReportPanel extends StatelessWidget {
           children: [
             Text(
               'Предпросмотр',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const Divider(height: 20),
             SelectableText(
@@ -238,17 +235,17 @@ class _DensityCard extends StatelessWidget {
           children: [
             Text(
               'Плотность молочной железы',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             FilterChip(
               label: const Text('Одинаковая с обеих сторон'),
               selected: exam.sameDensityBothSides,
-              onSelected: (checked) =>
-                  controller.update((e) => e.copyWith(sameDensityBothSides: checked)),
+              onSelected: (checked) => controller.update(
+                (e) => e.copyWith(sameDensityBothSides: checked),
+              ),
             ),
             if (exam.sameDensityBothSides) ...[
               const SizedBox(height: 12),
@@ -275,8 +272,14 @@ class _QuickConclusionsCard extends StatelessWidget {
 
   void _apply(FindingType finding) {
     controller.update((exam) {
-      final side = BreastExamSide(side: exam.right.side, density: exam.right.density);
-      final sideLeft = BreastExamSide(side: exam.left.side, density: exam.left.density);
+      final side = BreastExamSide(
+        side: exam.right.side,
+        density: exam.right.density,
+      );
+      final sideLeft = BreastExamSide(
+        side: exam.left.side,
+        density: exam.left.density,
+      );
       return exam.copyWith(
         right: side.addFinding(SelectedFinding(findingType: finding)),
         left: sideLeft.addFinding(SelectedFinding(findingType: finding)),
@@ -307,10 +310,9 @@ class _QuickConclusionsCard extends StatelessWidget {
           children: [
             Text(
               'Частые заключения',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Wrap(
