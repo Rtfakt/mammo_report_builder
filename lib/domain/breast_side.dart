@@ -12,6 +12,11 @@ enum BreastSide {
         BreastSide.left => 'ЛЕВАЯ МОЛОЧНАЯ ЖЕЛЕЗА В ДВУХ ПРОЕКЦИЯХ',
       };
 
+  String get genitiveLabel => switch (this) {
+        BreastSide.right => 'правой',
+        BreastSide.left => 'левой',
+      };
+
   BreastSide get opposite =>
       this == BreastSide.right ? BreastSide.left : BreastSide.right;
 }

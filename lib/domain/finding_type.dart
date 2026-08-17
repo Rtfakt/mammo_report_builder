@@ -40,6 +40,10 @@ class FindingType {
   /// (например, дообследование при локальной асимметрии).
   final String? recommendationFragment;
 
+  /// Шаблон текста для раздела ЗАКЛЮЧЕНИЕ. Поддерживает плейсхолдеры
+  /// `{side}` (родительный падеж: "правой"/"левой"), `{quadrant}`, `{size}`.
+  final String? conclusionFragment;
+
   const FindingType({
     required this.id,
     required this.label,
@@ -49,11 +53,23 @@ class FindingType {
     this.descriptionOverrides = const {},
     this.category,
     this.recommendationFragment,
+    this.conclusionFragment,
   });
 
-  /// Строка для "Заключения", например "ЛОКАЛЬНАЯ АСИММЕТРИЯ (BIRADS 4а)".
-  String get conclusionText =>
-      category == null ? label.toUpperCase() : '${label.toUpperCase()} (${category!.code})';
+  /// Возвращает текст заключения с подставленными значениями,
+  /// либо `null` если [conclusionFragment] не задан.
+  String? conclusionFor({
+    required String sideLabel,
+    Quadrant? quadrant,
+    String? size,
+  }) {
+    if (conclusionFragment == null) return null;
+    var result = conclusionFragment!;
+    result = result.replaceAll('{side}', sideLabel);
+    if (quadrant != null) result = result.replaceAll('{quadrant}', quadrant.inTextForm);
+    result = result.replaceAll('{size}', size?.isNotEmpty == true ? size! : '__ мм');
+    return result;
+  }
 
   String? overrideFor(DescriptionSlot slot, {Quadrant? quadrant, String? size}) {
     final template = descriptionOverrides[slot];

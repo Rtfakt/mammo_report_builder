@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../domain/birads_category.dart';
 import '../../domain/breast_side.dart';
@@ -69,7 +70,24 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
     if (finding == null) return false;
     if (_sides.isEmpty) return false;
     if (finding.requiresLocalization && _quadrant == null) return false;
+    if (finding.requiresSize && !_isValidSize(_sizeController.text)) return false;
     return true;
+  }
+
+  /// Размер обязателен: не пустой и не равный нулю.
+  bool _isValidSize(String raw) {
+    final normalized = raw.trim().replaceAll(',', '.');
+    if (normalized.isEmpty) return false;
+    final value = double.tryParse(normalized);
+    return value != null && value > 0;
+  }
+
+  String? get _sizeErrorText {
+    if (_selectedFinding?.requiresSize != true) return null;
+    final raw = _sizeController.text.trim();
+    if (raw.isEmpty) return null;
+    if (_isValidSize(raw)) return null;
+    return 'Укажите размер больше 0';
   }
 
   void _selectCategory(BiRadsCategory category) {
@@ -221,11 +239,16 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
           const SizedBox(height: 8),
           TextField(
             controller: _sizeController,
-            decoration: const InputDecoration(
-              hintText: 'Например: 12 мм',
-              border: OutlineInputBorder(),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+            ],
+            decoration: InputDecoration(
+              hintText: 'Например: 12',
+              border: const OutlineInputBorder(),
               suffixText: 'мм',
               isDense: true,
+              errorText: _sizeErrorText,
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -283,7 +306,7 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
         findingType: finding,
         sides: _sides,
         quadrant: _quadrant,
-        size: _sizeController.text.trim().isEmpty ? null : _sizeController.text.trim(),
+        size: finding.requiresSize ? '${_sizeController.text.trim()} мм' : null,
       ),
     );
   }

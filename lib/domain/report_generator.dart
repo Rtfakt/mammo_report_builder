@@ -94,14 +94,31 @@ String _buildConclusion(MammographyExam exam) {
     return 'Без очаговой патологии.\nBIRADS 1 справа и слева.';
   }
 
-  final rightLabel = rightCat?.code ?? 'BIRADS 1';
-  final leftLabel = leftCat?.code ?? 'BIRADS 1';
-
-  if (rightLabel == leftLabel) {
-    return '$rightLabel справа и слева.';
+  // Собираем тексты находок, дедуплицируя одинаковые строки
+  // (например, двустороннее ФЖИ даёт одну строку).
+  final findingTexts = <String>[];
+  for (final side in [exam.right, exam.left]) {
+    for (final finding in side.findings) {
+      final text = finding.findingType.conclusionFor(
+        sideLabel: side.side.genitiveLabel,
+        quadrant: finding.quadrant,
+        size: finding.size,
+      );
+      if (text != null && !findingTexts.contains(text)) {
+        findingTexts.add(text);
+      }
+    }
   }
 
-  return '$rightLabel справа.\n$leftLabel слева.';
+  final rightLabel = rightCat?.code ?? 'BIRADS 1';
+  final leftLabel = leftCat?.code ?? 'BIRADS 1';
+  final biRadsLine = rightLabel == leftLabel
+      ? '$rightLabel справа и слева.'
+      : '$rightLabel справа.\n$leftLabel слева.';
+
+  if (findingTexts.isEmpty) return biRadsLine;
+
+  return '${findingTexts.join(' ')}\n$biRadsLine';
 }
 
 String _buildRecommendations(MammographyExam exam) {

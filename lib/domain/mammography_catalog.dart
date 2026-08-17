@@ -20,6 +20,7 @@ final List<FindingType> mammographyFindingCatalog = [
           'Структура представлена преимущественно элементами жировой ткани с участками фиброза, что соответствует фиброзно-жировой инволюции.',
     },
     category: BiRadsCategory.birads2,
+    conclusionFragment: 'Признаки фиброзно-жировой инволюции молочных желёз.',
   ),
   const FindingType(
     id: 'fibrocystic_mastopathy',
@@ -31,6 +32,7 @@ final List<FindingType> mammographyFindingCatalog = [
           'Структура представлена диффузным чередованием фиброзного, железистого и кистозного компонентов, что соответствует фиброзно-кистозным изменениям.',
     },
     category: BiRadsCategory.birads2,
+    conclusionFragment: 'Признаки фиброзно-кистозных изменений молочных желёз.',
   ),
 
   // ───────────────────────── BI-RADS 2 ─────────────────────────
@@ -42,9 +44,11 @@ final List<FindingType> mammographyFindingCatalog = [
     requiresSize: true,
     descriptionOverrides: {
       DescriptionSlot.nodules:
-          'Определяется округлое образование с четкими ровными контурами размером до {size} в проекции {quadrant}.',
+          'В проекции {quadrant} определяется округлое образование с четкими ровными контурами размером до {size} ',
     },
     category: BiRadsCategory.birads2,
+    conclusionFragment:
+        'Признаки доброкачественного образования {side} молочной железы',
   ),
   const FindingType(
     id: 'birads2_calcifications',
@@ -56,6 +60,7 @@ final List<FindingType> mammographyFindingCatalog = [
           'Кальцинаты доброкачественные - да (распределение диффузное/региональное/единичное), злокачественные - нет.',
     },
     category: BiRadsCategory.birads2,
+    conclusionFragment: 'Доброкачественные обызвествления молочных желёз.',
   ),
   const FindingType(
     id: 'birads2_intramammary_ln',
@@ -67,6 +72,8 @@ final List<FindingType> mammographyFindingCatalog = [
           'Определяются интрамаммарные лимфатические узлы в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads2,
+    conclusionFragment:
+        'Интрамаммарные лимфатические узлы {side} молочной железы.',
   ),
   const FindingType(
     id: 'birads2_galactocele',
@@ -78,6 +85,7 @@ final List<FindingType> mammographyFindingCatalog = [
           'Определяется галактоцеле в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads2,
+    conclusionFragment: 'Галактоцеле {side} молочной железы.',
   ),
   const FindingType(
     id: 'birads2_hamartoma',
@@ -85,10 +93,10 @@ final List<FindingType> mammographyFindingCatalog = [
     isPathology: true,
     requiresLocalization: true,
     descriptionOverrides: {
-      DescriptionSlot.nodules:
-          'Определяется гамартома в проекции {quadrant}.',
+      DescriptionSlot.nodules: 'Определяется гамартома в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads2,
+    conclusionFragment: 'Признаки гамартомы в {side} молочной железы.',
   ),
   const FindingType(
     id: 'birads2_implants',
@@ -100,6 +108,7 @@ final List<FindingType> mammographyFindingCatalog = [
           'Определяются имплантаты молочных желез. Капсула без признаков деформации.',
     },
     category: BiRadsCategory.birads2,
+    conclusionFragment: 'Имплантаты молочных желёз.',
   ),
   const FindingType(
     id: 'birads2_postop',
@@ -111,6 +120,8 @@ final List<FindingType> mammographyFindingCatalog = [
           'Нарушение архитектоники - да, рубцовые послеоперационные изменения в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads2,
+    conclusionFragment:
+        'Послеоперационные рубцовые изменения {side} молочной железы в проекции {quadrant}.',
   ),
   const FindingType(
     id: 'birads2_radiation_edema',
@@ -122,32 +133,22 @@ final List<FindingType> mammographyFindingCatalog = [
           'Кожные покровы утолщены, отечны, что может соответствовать изменениям после лучевой терапии.',
     },
     category: BiRadsCategory.birads2,
+    conclusionFragment: 'Признаки постлучевых изменений молочных желёз.',
   ),
 
   // ───────────────────────── BI-RADS 3 ─────────────────────────
   const FindingType(
     id: 'birads3_fibroadenoma',
-    label: 'Фиброаденома?',
+    label: 'Фиброаденома? Киста?',
     isPathology: true,
     requiresLocalization: true,
     requiresSize: true,
     descriptionOverrides: {
       DescriptionSlot.nodules:
-          'Определяется образование с четкими контурами, предположительно соответствующее фиброаденоме, размером до {size} в проекции {quadrant}.',
+          'В проекции {quadrant} определяется округлое образование с четкими контурами, размером до {size}  может соответствовать фиброаденоме или кисте, ',
     },
     category: BiRadsCategory.birads3,
-  ),
-  const FindingType(
-    id: 'birads3_cyst',
-    label: 'Киста?',
-    isPathology: true,
-    requiresLocalization: true,
-    requiresSize: true,
-    descriptionOverrides: {
-      DescriptionSlot.nodules:
-          'Определяется образование с четкими контурами, предположительно соответствующее кисте, размером до {size} в проекции {quadrant}.',
-    },
-    category: BiRadsCategory.birads3,
+    conclusionFragment: 'Фиброаденома? Киста? в {side} молочной железе',
   ),
   const FindingType(
     id: 'birads3_focal_asymmetry',
@@ -156,9 +157,11 @@ final List<FindingType> mammographyFindingCatalog = [
     requiresLocalization: true,
     descriptionOverrides: {
       DescriptionSlot.asymmetry:
-          'Участков ассиметрии - да, определяется очаговая асимметрия ткани в проекции {quadrant}.',
+          'Участков ассиметрии - да, определяется очаговая асимметрия неправильной формы в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads3,
+    conclusionFragment:
+        'Очаговая асимметрия ткани {side} молочной железы в проекции {quadrant}.',
   ),
   const FindingType(
     id: 'birads3_microcalcifications',
@@ -167,9 +170,11 @@ final List<FindingType> mammographyFindingCatalog = [
     requiresLocalization: true,
     descriptionOverrides: {
       DescriptionSlot.calcifications:
-          'Кальцинаты доброкачественные - нет, определяется единичная группа точечных микрокальцинатов в проекции {quadrant}.',
+          'Определяется единичная группа точечных микрокальцинатов в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads3,
+    conclusionFragment:
+        'Единичная группа точечных микрокальцинатов в {side} молочной железе в проекции {quadrant}.',
   ),
   const FindingType(
     id: 'birads3_mastitis',
@@ -181,6 +186,8 @@ final List<FindingType> mammographyFindingCatalog = [
           'Структура неоднородная, определяются признаки воспалительных изменений (мастит).',
     },
     category: BiRadsCategory.birads3,
+    conclusionFragment:
+        'Признаки воспалительных изменений {side} молочной железы (мастит).',
   ),
   const FindingType(
     id: 'birads3_nipple_retraction',
@@ -192,6 +199,8 @@ final List<FindingType> mammographyFindingCatalog = [
           'Определяется втяжение соска без видимого объемного образования.',
     },
     category: BiRadsCategory.birads3,
+    conclusionFragment:
+        'Втяжение соска {side} молочной железы без видимого объёмного образования.',
   ),
 
   // ───────────────────────── BI-RADS 4а ─────────────────────────
@@ -206,6 +215,8 @@ final List<FindingType> mammographyFindingCatalog = [
           'Определяется объемное образование с частично размытым контуром размером до {size} в проекции {quadrant}, не исключается атипичная фиброаденома.',
     },
     category: BiRadsCategory.birads4a,
+    conclusionFragment:
+        'Рентген-картина атипичной фиброаденомы {side} молочной железы',
   ),
   const FindingType(
     id: 'birads4a_local_asymmetry',
@@ -219,6 +230,7 @@ final List<FindingType> mammographyFindingCatalog = [
     category: BiRadsCategory.birads4a,
     recommendationFragment:
         'Дообследование: прицельная рентгенография с компрессией и/или УЗИ молочных желёз для уточнения характера выявленных изменений.',
+    conclusionFragment: 'Локальная асимметрия ткани {side} молочной железы',
   ),
   const FindingType(
     id: 'birads4a_architecture_distortion',
@@ -230,6 +242,8 @@ final List<FindingType> mammographyFindingCatalog = [
           'Нарушение архитектоники - да, в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads4a,
+    conclusionFragment:
+        'Нарушение архитектоники {side} молочной железы в проекции {quadrant}.',
   ),
   const FindingType(
     id: 'birads4a_abscess',
@@ -242,6 +256,7 @@ final List<FindingType> mammographyFindingCatalog = [
           'Определяется образование с нечеткими контурами размером до {size} в проекции {quadrant}, соответствующее абсцессу.',
     },
     category: BiRadsCategory.birads4a,
+    conclusionFragment: 'Абсцесс {side} молочной железы в проекции.',
   ),
 
   // ───────────────────────── BI-RADS 4б ─────────────────────────
@@ -252,9 +267,11 @@ final List<FindingType> mammographyFindingCatalog = [
     requiresLocalization: true,
     descriptionOverrides: {
       DescriptionSlot.calcifications:
-          'Кальцинаты - да, определяются сгруппированные аморфные или мелкие плеоморфные микрокальцинаты в проекции {quadrant}.',
+          'Злокачественные кальцинаты - да, определяются сгруппированные аморфные или мелкие плеоморфные микрокальцинаты в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads4b,
+    conclusionFragment:
+        'Сгруппированные аморфные/плеоморфные микрокальцинаты в {side} молочной железе в проекции {quadrant}.',
   ),
   const FindingType(
     id: 'birads4b_indistinct_mass',
@@ -264,9 +281,11 @@ final List<FindingType> mammographyFindingCatalog = [
     requiresSize: true,
     descriptionOverrides: {
       DescriptionSlot.nodules:
-          'Определяется образование с нечеткими краями размером до {size} в проекции {quadrant}.',
+          'Определяется образование с нечеткими контурами размером до {size} в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads4b,
+    conclusionFragment:
+        'Рентген-картина недифференцированного солидного образования с нечетко выраженными краями',
   ),
   const FindingType(
     id: 'birads4b_growing_mass',
@@ -279,6 +298,8 @@ final List<FindingType> mammographyFindingCatalog = [
           'Определяется увеличение размеров ранее выявленного образования до {size} в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads4b,
+    conclusionFragment:
+        'Увеличение размеров ранее выявленного образования до {size} в проекции {quadrant} {side} молочной железы.',
   ),
   const FindingType(
     id: 'birads4b_ductography_defect',
@@ -290,20 +311,25 @@ final List<FindingType> mammographyFindingCatalog = [
           'При дуктографии определяются дефекты наполнения.',
     },
     category: BiRadsCategory.birads4b,
+    conclusionFragment:
+        'Дефекты наполнения {side} молочной железы при дуктографии.',
   ),
   const FindingType(
     id: 'birads4b_suspicious_ln',
     label: 'Л/у с подозрением на метастатическое поражение',
     isPathology: true,
     requiresLocalization: true,
+    requiresSize: true,
     descriptionOverrides: {
       DescriptionSlot.lymphNodes:
-          'Определяется увеличенный лимфатический узел с подозрением на метастатическое поражение в проекции {quadrant}.',
+          'Определяется увеличенный лимфатический узел размером до {size} в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads4b,
+    conclusionFragment:
+        'Рентген-картина увеличенных лимфатических узлов {side} молочной железы.',
   ),
 
-  // ───────────────────────── BI-RADS 4в ─────────────────────────
+  // ───────────────────────── BI-RADS 4с ─────────────────────────
   const FindingType(
     id: 'birads4c_pleomorphic_calcifications',
     label: 'Скопление плеоморфных микрокальцинатов (нарастание в динамике)',
@@ -314,6 +340,8 @@ final List<FindingType> mammographyFindingCatalog = [
           'Кальцинаты - да, определяется скопление плеоморфных микрокальцинатов с увеличением количества в динамике в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads4c,
+    conclusionFragment:
+        'Скопление плеоморфных микрокальцинатов с нарастанием в динамике в {side} молочной железе.',
   ),
   const FindingType(
     id: 'birads4c_malignant_mass',
@@ -323,9 +351,11 @@ final List<FindingType> mammographyFindingCatalog = [
     requiresSize: true,
     descriptionOverrides: {
       DescriptionSlot.nodules:
-          'Определяется узловое образование с признаками рака размером до {size} в проекции {quadrant}.',
+          'Определяется узловое образование с лучистыми контурами размером до {size} в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads4c,
+    conclusionFragment:
+        'Узловое образование с признаками рака размером до {size} в {side} молочной железе.',
   ),
 
   // ───────────────────────── BI-RADS 5 ─────────────────────────
@@ -340,10 +370,13 @@ final List<FindingType> mammographyFindingCatalog = [
           'Определяется объемное образование высокой плотности с неровными лучистыми контурами размером до {size} в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads5,
+    conclusionFragment:
+        'Объёмное образование высокой плотности с неровными лучистыми контурами размером до {size} в {side} молочной железе в проекции {quadrant}.',
   ),
   const FindingType(
     id: 'birads5_linear_calcifications',
-    label: 'Сегментарное/линейное распределение мелких линейных и плеоморфных кальцинатов',
+    label:
+        'Сегментарное/линейное распределение мелких линейных и плеоморфных кальцинатов',
     isPathology: true,
     requiresLocalization: true,
     descriptionOverrides: {
@@ -351,10 +384,13 @@ final List<FindingType> mammographyFindingCatalog = [
           'Кальцинаты - да, определяется сегментарное или линейное распределение мелких линейных и плеоморфных кальцинатов в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads5,
+    conclusionFragment:
+        'Сегментарное/линейное распределение мелких линейных и плеоморфных кальцинатов в {side} молочной железе в проекции {quadrant}.',
   ),
   const FindingType(
     id: 'birads5_spiculated_with_calcifications',
-    label: 'Образование с лучистым контуром в сочетании с плеоморфными кальцинатами',
+    label:
+        'Образование с лучистым контуром в сочетании с плеоморфными кальцинатами',
     isPathology: true,
     requiresLocalization: true,
     requiresSize: true,
@@ -365,6 +401,8 @@ final List<FindingType> mammographyFindingCatalog = [
           'Кальцинаты - да, плеоморфные, в сочетании с выявленным образованием.',
     },
     category: BiRadsCategory.birads5,
+    conclusionFragment:
+        'Объёмное образование с неровным лучистым контуром размером до {size} с плеоморфными кальцинатами в {side} молочной железе в проекции {quadrant}.',
   ),
 
   // ───────────────────────── BI-RADS 6 ─────────────────────────
@@ -378,6 +416,8 @@ final List<FindingType> mammographyFindingCatalog = [
           'Определяются признаки верифицированного неоперированного рака молочной железы.',
     },
     category: BiRadsCategory.birads6,
+    conclusionFragment:
+        'Верифицированный неоперированный рак {side} молочной железы.',
   ),
 ];
 
