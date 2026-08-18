@@ -1,6 +1,7 @@
 import 'benign_calcification_type.dart';
 import 'calcification_distribution.dart';
 import 'finding_type.dart';
+import 'implant_placement.dart';
 import 'mammography_catalog.dart';
 import 'quadrant.dart';
 
@@ -13,6 +14,7 @@ class SelectedFinding {
   final String? size;
   final CalcificationDistribution? calcificationDistribution;
   final List<BenignCalcificationType> calcificationTypes;
+  final ImplantPlacement? implantPlacement;
 
   const SelectedFinding({
     required this.findingType,
@@ -20,6 +22,7 @@ class SelectedFinding {
     this.size,
     this.calcificationDistribution,
     this.calcificationTypes = const [],
+    this.implantPlacement,
   });
 
   Map<String, dynamic> toJson() => {
@@ -28,12 +31,14 @@ class SelectedFinding {
     'size': size,
     'calcificationDistribution': calcificationDistribution?.name,
     'calcificationTypes': calcificationTypes.map((t) => t.name).toList(),
+    'implantPlacement': implantPlacement?.name,
   };
 
   factory SelectedFinding.fromJson(Map<String, dynamic> json) {
     final quadrantName = json['quadrant'] as String?;
     final distributionName = json['calcificationDistribution'] as String?;
     final typeNames = json['calcificationTypes'] as List?;
+    final implantPlacementName = json['implantPlacement'] as String?;
     return SelectedFinding(
       findingType: findingById(json['findingId'] as String),
       quadrant: quadrantName == null
@@ -48,6 +53,9 @@ class SelectedFinding {
           : typeNames
                 .map((n) => BenignCalcificationType.values.byName(n as String))
                 .toList(),
+      implantPlacement: implantPlacementName == null
+          ? null
+          : ImplantPlacement.values.byName(implantPlacementName),
     );
   }
 }

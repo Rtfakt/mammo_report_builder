@@ -6,6 +6,7 @@ import 'acr_density.dart';
 enum DescriptionSlot {
   skin,
   structure,
+  implants,
   calcifications,
   asymmetry,
   nodules,
@@ -14,16 +15,15 @@ enum DescriptionSlot {
   vesselCalcification;
 
   String defaultText(AcrDensity density) => switch (this) {
-        DescriptionSlot.skin =>
-          'Кожные покровы, сосок, ареола без особенностей.',
-        DescriptionSlot.structure => density.defaultStructureSentence,
-        DescriptionSlot.calcifications =>
-          'Кальцинаты доброкачественные - нет, злокачественные - нет.',
-        DescriptionSlot.asymmetry => 'Участков ассиметрии - нет.',
-        DescriptionSlot.nodules => 'Узловые образования не определяются.',
-        DescriptionSlot.architecture => 'Нарушение архитектоники - нет.',
-        DescriptionSlot.lymphNodes => 'Лимфатические узлы не увеличены.',
-        DescriptionSlot.vesselCalcification =>
-          'Обызвествления сосудов нет.',
-      };
+    DescriptionSlot.skin => 'Кожные покровы, сосок, ареола без особенностей.',
+    DescriptionSlot.structure => density.defaultStructureSentence,
+    DescriptionSlot.implants => '',
+    DescriptionSlot.calcifications =>
+      'Кальцинаты доброкачественные - нет, злокачественные - нет.',
+    DescriptionSlot.asymmetry => 'Участков ассиметрии - нет.',
+    DescriptionSlot.nodules => 'Узловые образования не определяются.',
+    DescriptionSlot.architecture => 'Нарушение архитектоники - нет.',
+    DescriptionSlot.lymphNodes => 'Лимфатические узлы не увеличены.',
+    DescriptionSlot.vesselCalcification => 'Обызвествления сосудов нет.',
+  };
 }

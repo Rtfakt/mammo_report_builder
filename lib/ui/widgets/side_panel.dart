@@ -102,6 +102,9 @@ class SidePanel extends StatelessWidget {
     if (finding.calcificationTypes.isNotEmpty) {
       parts.add(finding.calcificationTypes.map((t) => t.inTextForm).join(', '));
     }
+    if (finding.implantPlacement != null) {
+      parts.add(finding.implantPlacement!.label.toLowerCase());
+    }
     return parts.join(' · ');
   }
 

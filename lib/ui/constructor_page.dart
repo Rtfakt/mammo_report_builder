@@ -96,6 +96,7 @@ class ConstructorPage extends StatelessWidget {
       size: result.size,
       calcificationDistribution: result.calcificationDistribution,
       calcificationTypes: result.calcificationTypes,
+      implantPlacement: result.implantPlacement,
     );
 
     controller.update((exam) {

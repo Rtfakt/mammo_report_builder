@@ -1,9 +1,11 @@
 import 'benign_calcification_type.dart';
 import 'birads_category.dart';
 import 'breast_exam_side.dart';
+import 'breast_side.dart';
 import 'description_slot.dart';
 import 'generated_report.dart';
 import 'mammography_exam.dart';
+import 'selected_finding.dart';
 
 /// Чистая функция: MammographyExam -> готовый текст описания/заключения.
 ///
@@ -56,6 +58,7 @@ String _buildSideDescription(BreastExamSide side) {
         size: finding.size,
         calcificationDistribution: finding.calcificationDistribution,
         calcificationTypes: finding.calcificationTypes,
+        implantPlacement: finding.implantPlacement,
       );
       if (override != null) {
         slots[slot] = override;
@@ -70,6 +73,7 @@ String _buildSideDescription(BreastExamSide side) {
     side.density.densitySentence,
     slots[DescriptionSlot.skin]!,
     slots[DescriptionSlot.structure]!,
+    slots[DescriptionSlot.implants]!,
     slots[DescriptionSlot.calcifications]!,
     slots[DescriptionSlot.asymmetry]!,
     slots[DescriptionSlot.nodules]!,
@@ -78,7 +82,7 @@ String _buildSideDescription(BreastExamSide side) {
     slots[DescriptionSlot.vesselCalcification]!,
   ];
 
-  return sentences.join(' ');
+  return sentences.where((s) => s.trim().isNotEmpty).join(' ');
 }
 
 /// Определяет наивысшую категорию BI-RADS среди патологических находок стороны.
@@ -102,20 +106,37 @@ String _buildConclusion(MammographyExam exam) {
   }
 
   // Собираем тексты находок, дедуплицируя одинаковые строки
-  // (например, двустороннее ФЖИ даёт одну строку).
+  // (например, двустороннее ФЖИ даёт одну строку). Находки с
+  // combineBilateralSides склеиваются в «справа и слева».
   final findingTexts = <String>[];
-  for (final side in [exam.right, exam.left]) {
-    for (final finding in side.findings) {
-      final text = finding.findingType.conclusionFor(
-        sideLabel: side.side.genitiveLabel,
-        quadrant: finding.quadrant,
-        size: finding.size,
-        calcificationDistribution: finding.calcificationDistribution,
-        calcificationTypes: finding.calcificationTypes,
-      );
-      if (text != null && !findingTexts.contains(text)) {
-        findingTexts.add(text);
-      }
+  final consumedLeft = <int>{};
+
+  for (final finding in exam.right.findings) {
+    final text = _conclusionTextFor(
+      finding,
+      side: exam.right.side,
+      leftFindings: exam.left.findings,
+      consumedLeft: consumedLeft,
+    );
+    if (text != null && !findingTexts.contains(text)) {
+      findingTexts.add(text);
+    }
+  }
+
+  for (var i = 0; i < exam.left.findings.length; i++) {
+    if (consumedLeft.contains(i)) continue;
+    final finding = exam.left.findings[i];
+    final text = finding.findingType.conclusionFor(
+      sideLabel: exam.left.side.genitiveLabel,
+      sidesAdverb: 'слева',
+      quadrant: finding.quadrant,
+      size: finding.size,
+      calcificationDistribution: finding.calcificationDistribution,
+      calcificationTypes: finding.calcificationTypes,
+      implantPlacement: finding.implantPlacement,
+    );
+    if (text != null && !findingTexts.contains(text)) {
+      findingTexts.add(text);
     }
   }
 
@@ -128,6 +149,48 @@ String _buildConclusion(MammographyExam exam) {
   if (findingTexts.isEmpty) return biRadsLine;
 
   return '${findingTexts.join(' ')}\n$biRadsLine';
+}
+
+String? _conclusionTextFor(
+  SelectedFinding finding, {
+  required BreastSide side,
+  required List<SelectedFinding> leftFindings,
+  required Set<int> consumedLeft,
+}) {
+  var sidesAdverb = side == BreastSide.right ? 'справа' : 'слева';
+
+  if (finding.findingType.combineBilateralSides) {
+    for (var i = 0; i < leftFindings.length; i++) {
+      if (consumedLeft.contains(i)) continue;
+      if (!_sameConclusionSignature(finding, leftFindings[i])) continue;
+      consumedLeft.add(i);
+      sidesAdverb = 'справа и слева';
+      break;
+    }
+  }
+
+  return finding.findingType.conclusionFor(
+    sideLabel: side.genitiveLabel,
+    sidesAdverb: sidesAdverb,
+    quadrant: finding.quadrant,
+    size: finding.size,
+    calcificationDistribution: finding.calcificationDistribution,
+    calcificationTypes: finding.calcificationTypes,
+    implantPlacement: finding.implantPlacement,
+  );
+}
+
+bool _sameConclusionSignature(SelectedFinding a, SelectedFinding b) {
+  if (a.findingType.id != b.findingType.id) return false;
+  if (a.implantPlacement != b.implantPlacement) return false;
+  if (a.quadrant != b.quadrant) return false;
+  if (a.size != b.size) return false;
+  if (a.calcificationDistribution != b.calcificationDistribution) return false;
+  if (a.calcificationTypes.length != b.calcificationTypes.length) return false;
+  for (var i = 0; i < a.calcificationTypes.length; i++) {
+    if (a.calcificationTypes[i] != b.calcificationTypes[i]) return false;
+  }
+  return true;
 }
 
 String _buildRecommendations(MammographyExam exam) {

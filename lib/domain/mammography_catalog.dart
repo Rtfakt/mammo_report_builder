@@ -7,7 +7,8 @@ import 'finding_type.dart';
 /// Находки сгруппированы по категориям BI-RADS. Чтобы добавить новую
 /// находку — добавьте один [FindingType] с нужной [BiRadsCategory].
 /// UI (диалог выбора, показ "Сторона"/"Локализация"/"Размер"/
-/// "Распределение") и генератор текста подхватят её автоматически.
+/// "Распределение"/"Расположение импланта") и генератор текста
+/// подхватят её автоматически.
 final List<FindingType> mammographyFindingCatalog = [
   // ─── Быстрые заключения (используются в "Частые заключения") ───
   const FindingType(
@@ -102,15 +103,18 @@ final List<FindingType> mammographyFindingCatalog = [
   ),
   const FindingType(
     id: 'birads2_implants',
-    label: 'Имплантаты молочных желез',
+    label: 'Импланты',
     isPathology: true,
     requiresLocalization: false,
+    requiresImplantPlacement: true,
+    defaultsToBothSides: true,
+    combineBilateralSides: true,
     descriptionOverrides: {
-      DescriptionSlot.structure:
-          'Определяются имплантаты молочных желез. Капсула без признаков деформации.',
+      DescriptionSlot.implants:
+          '{implantAdverb} визуализируется тень эндопротеза, положение его правильное, форма округлая, целостность импланта не нарушена.',
     },
     category: BiRadsCategory.birads2,
-    conclusionFragment: 'Имплантаты молочных желёз.',
+    conclusionFragment: '{implantAdjective} импланты молочной железы {sides}.',
   ),
   const FindingType(
     id: 'birads2_postop',

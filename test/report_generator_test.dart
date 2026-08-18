@@ -4,6 +4,7 @@ import 'package:mammo_report_builder/domain/benign_calcification_type.dart';
 import 'package:mammo_report_builder/domain/breast_exam_side.dart';
 import 'package:mammo_report_builder/domain/breast_side.dart';
 import 'package:mammo_report_builder/domain/calcification_distribution.dart';
+import 'package:mammo_report_builder/domain/implant_placement.dart';
 import 'package:mammo_report_builder/domain/mammography_catalog.dart';
 import 'package:mammo_report_builder/domain/mammography_exam.dart';
 import 'package:mammo_report_builder/domain/quadrant.dart';
@@ -193,6 +194,110 @@ void main() {
           contains(
             'Доброкачественные обызвествления молочных желёз (сосудистые, круглые, распределение диффузное).',
           ),
+        );
+      },
+    );
+
+    test(
+      'ретромаммарные импланты с обеих сторон -> описание и заключение справа и слева',
+      () {
+        final finding = SelectedFinding(
+          findingType: findingById('birads2_implants'),
+          implantPlacement: ImplantPlacement.retromammary,
+        );
+        final exam = MammographyExam(
+          right: BreastExamSide(
+            side: BreastSide.right,
+            density: AcrDensity.b,
+            findings: [finding],
+          ),
+          left: BreastExamSide(
+            side: BreastSide.left,
+            density: AcrDensity.b,
+            findings: [finding],
+          ),
+        );
+
+        final report = generateMammographyReport(exam);
+
+        expect(
+          report.descriptionText,
+          contains(
+            'Ретромаммарно визуализируется тень эндопротеза, положение его правильное, форма округлая, целостность импланта не нарушена.',
+          ),
+        );
+        expect(
+          report.conclusionText,
+          contains('Ретромаммарные импланты молочной железы справа и слева.'),
+        );
+      },
+    );
+
+    test('субмускулярный имплант только справа -> заключение только справа', () {
+      final finding = SelectedFinding(
+        findingType: findingById('birads2_implants'),
+        implantPlacement: ImplantPlacement.submuscular,
+      );
+      final exam = MammographyExam(
+        right: BreastExamSide(
+          side: BreastSide.right,
+          density: AcrDensity.b,
+          findings: [finding],
+        ),
+        left: const BreastExamSide(
+          side: BreastSide.left,
+          density: AcrDensity.b,
+        ),
+      );
+
+      final report = generateMammographyReport(exam);
+
+      expect(
+        report.descriptionText,
+        contains(
+          'Субмускулярно визуализируется тень эндопротеза, положение его правильное, форма округлая, целостность импланта не нарушена.',
+        ),
+      );
+      expect(
+        report.conclusionText,
+        contains('Субмускулярные импланты молочной железы справа.'),
+      );
+      expect(report.conclusionText, isNot(contains('справа и слева')));
+    });
+
+    test(
+      'разное расположение имплантов на разных сторонах -> две строки заключения',
+      () {
+        final rightFinding = SelectedFinding(
+          findingType: findingById('birads2_implants'),
+          implantPlacement: ImplantPlacement.retromammary,
+        );
+        final leftFinding = SelectedFinding(
+          findingType: findingById('birads2_implants'),
+          implantPlacement: ImplantPlacement.submuscular,
+        );
+        final exam = MammographyExam(
+          right: BreastExamSide(
+            side: BreastSide.right,
+            density: AcrDensity.b,
+            findings: [rightFinding],
+          ),
+          left: BreastExamSide(
+            side: BreastSide.left,
+            density: AcrDensity.b,
+            findings: [leftFinding],
+          ),
+        );
+
+        final report = generateMammographyReport(exam);
+
+        expect(
+          report.conclusionText,
+          contains('Ретромаммарные импланты молочной железы справа.'),
+        );
+        expect(
+          report.conclusionText,
+          contains('Субмускулярные импланты молочной железы слева.'),
         );
       },
     );

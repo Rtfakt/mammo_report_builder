@@ -6,6 +6,7 @@ import '../../domain/birads_category.dart';
 import '../../domain/breast_side.dart';
 import '../../domain/calcification_distribution.dart';
 import '../../domain/finding_type.dart';
+import '../../domain/implant_placement.dart';
 import '../../domain/mammography_catalog.dart';
 import '../../domain/quadrant.dart';
 
@@ -20,6 +21,7 @@ class AddFindingResult {
   final String? size;
   final CalcificationDistribution? calcificationDistribution;
   final List<BenignCalcificationType> calcificationTypes;
+  final ImplantPlacement? implantPlacement;
 
   const AddFindingResult({
     required this.findingType,
@@ -28,6 +30,7 @@ class AddFindingResult {
     this.size,
     this.calcificationDistribution,
     this.calcificationTypes = const [],
+    this.implantPlacement,
   });
 }
 
@@ -56,6 +59,7 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
   late Set<BreastSide> _sides;
   Quadrant? _quadrant;
   CalcificationDistribution? _distribution;
+  ImplantPlacement? _implantPlacement;
   final Set<BenignCalcificationType> _calcificationTypes = {};
   final TextEditingController _sizeController = TextEditingController();
 
@@ -99,6 +103,9 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
       if (_distribution == null) return false;
       if (_calcificationTypes.isEmpty) return false;
     }
+    if (finding.requiresImplantPlacement && _implantPlacement == null) {
+      return false;
+    }
     return true;
   }
 
@@ -125,23 +132,34 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
       _selectedFinding = null;
       _quadrant = null;
       _distribution = null;
+      _implantPlacement = null;
       _calcificationTypes.clear();
       _sizeController.clear();
 
       // BI-RADS 6 содержит единственную находку — выбираем её автоматически
       if (findings.length == 1) {
-        _selectedFinding = findings.first;
+        _applyFindingDefaults(findings.first);
       }
     });
   }
 
+  void _applyFindingDefaults(FindingType finding) {
+    _selectedFinding = finding;
+    _sides = finding.defaultsToBothSides
+        ? {BreastSide.right, BreastSide.left}
+        : {widget.currentSide};
+    _implantPlacement = finding.requiresImplantPlacement
+        ? ImplantPlacement.retromammary
+        : null;
+  }
+
   void _selectFinding(FindingType finding) {
     setState(() {
-      _selectedFinding = finding;
       _quadrant = null;
       _distribution = null;
       _calcificationTypes.clear();
       _sizeController.clear();
+      _applyFindingDefaults(finding);
     });
   }
 
@@ -152,6 +170,7 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
         _selectedFinding = null;
         _quadrant = null;
         _distribution = null;
+        _implantPlacement = null;
         _calcificationTypes.clear();
         _sizeController.clear();
       });
@@ -163,6 +182,7 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
       _selectedFinding = null;
       _quadrant = null;
       _distribution = null;
+      _implantPlacement = null;
       _calcificationTypes.clear();
       _sizeController.clear();
     });
@@ -334,8 +354,31 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
           ),
         ],
 
-        if (selected.requiresCalcificationDetails) ...[
+        if (selected.requiresImplantPlacement) ...[
           if (selected.requiresSize || selected.isPathology)
+            const SizedBox(height: 20),
+          const Text(
+            'Расположение импланта',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: ImplantPlacement.values.map((value) {
+              return ChoiceChip(
+                label: Text(value.label),
+                selected: _implantPlacement == value,
+                onSelected: (_) => setState(() => _implantPlacement = value),
+              );
+            }).toList(),
+          ),
+        ],
+
+        if (selected.requiresCalcificationDetails) ...[
+          if (selected.requiresSize ||
+              selected.isPathology ||
+              selected.requiresImplantPlacement)
             const SizedBox(height: 20),
           const Text(
             'Распределение',
@@ -384,7 +427,8 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
         if (selected.requiresLocalization) ...[
           if (selected.requiresSize ||
               selected.isPathology ||
-              selected.requiresCalcificationDetails)
+              selected.requiresCalcificationDetails ||
+              selected.requiresImplantPlacement)
             const SizedBox(height: 20),
           const Text(
             'Локализация',
@@ -421,6 +465,9 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
                   .where(_calcificationTypes.contains)
                   .toList()
             : const [],
+        implantPlacement: finding.requiresImplantPlacement
+            ? _implantPlacement
+            : null,
       ),
     );
   }
