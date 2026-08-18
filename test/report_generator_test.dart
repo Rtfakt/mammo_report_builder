@@ -198,40 +198,37 @@ void main() {
       },
     );
 
-    test(
-      'интрамаммарные лимфоузлы подставляют размер и квадрант в описание',
-      () {
-        final finding = SelectedFinding(
-          findingType: findingById('birads2_intramammary_ln'),
-          quadrant: Quadrant.upperOuter,
-          size: '8 мм',
-        );
-        final exam = MammographyExam(
-          right: BreastExamSide(
-            side: BreastSide.right,
-            density: AcrDensity.b,
-            findings: [finding],
-          ),
-          left: const BreastExamSide(
-            side: BreastSide.left,
-            density: AcrDensity.b,
-          ),
-        );
+    test('интрамаммарные лимфоузлы подставляют размер и квадрант в описание', () {
+      final finding = SelectedFinding(
+        findingType: findingById('birads2_intramammary_ln'),
+        quadrant: Quadrant.upperOuter,
+        size: '8 мм',
+      );
+      final exam = MammographyExam(
+        right: BreastExamSide(
+          side: BreastSide.right,
+          density: AcrDensity.b,
+          findings: [finding],
+        ),
+        left: const BreastExamSide(
+          side: BreastSide.left,
+          density: AcrDensity.b,
+        ),
+      );
 
-        final report = generateMammographyReport(exam);
+      final report = generateMammographyReport(exam);
 
-        expect(
-          report.descriptionText,
-          contains(
-            'Определяются интрамаммарные лимфатические узлы размером до 8 мм в проекции верхне-наружного квадранта.',
-          ),
-        );
-        expect(
-          report.conclusionText,
-          contains('Интрамаммарные лимфатические узлы правой молочной железы.'),
-        );
-      },
-    );
+      expect(
+        report.descriptionText,
+        contains(
+          'Определяются интрамаммарные лимфатические узлы размером до 8 мм в проекции верхне-наружного квадранта.',
+        ),
+      );
+      expect(
+        report.conclusionText,
+        contains('Интрамаммарные лимфатические узлы правой молочной железы.'),
+      );
+    });
 
     test(
       'ретромаммарные импланты с обеих сторон -> описание и заключение справа и слева',
@@ -333,6 +330,101 @@ void main() {
         expect(
           report.conclusionText,
           contains('Субмускулярные импланты молочной железы слева.'),
+        );
+      },
+    );
+
+    test(
+      'левая железа удалена, правая норма -> описание «Удалена», BIRADS только справа',
+      () {
+        final exam = MammographyExam(
+          right: const BreastExamSide(
+            side: BreastSide.right,
+            density: AcrDensity.b,
+          ),
+          left: const BreastExamSide(
+            side: BreastSide.left,
+            density: AcrDensity.b,
+            isRemoved: true,
+          ),
+        );
+
+        final report = generateMammographyReport(exam);
+
+        expect(
+          report.descriptionText,
+          contains('ПРАВАЯ МОЛОЧНАЯ ЖЕЛЕЗА В ДВУХ ПРОЕКЦИЯХ'),
+        );
+        expect(
+          report.descriptionText,
+          contains('ЛЕВАЯ МОЛОЧНАЯ ЖЕЛЕЗА:\nУдалена'),
+        );
+        expect(
+          report.descriptionText,
+          isNot(contains('ЛЕВАЯ МОЛОЧНАЯ ЖЕЛЕЗА В ДВУХ ПРОЕКЦИЯХ')),
+        );
+        expect(
+          report.conclusionText,
+          'Левая молочная железа удалена.\n'
+          'Без очаговой патологии.\n'
+          'BIRADS 1 справа.',
+        );
+        expect(report.conclusionText, isNot(contains('слева')));
+      },
+    );
+
+    test('правая железа удалена, слева ФКИ -> BIRADS только слева', () {
+      final finding = SelectedFinding(
+        findingType: findingById('fibrocystic_mastopathy'),
+      );
+      final exam = MammographyExam(
+        right: const BreastExamSide(
+          side: BreastSide.right,
+          density: AcrDensity.c,
+          isRemoved: true,
+        ),
+        left: BreastExamSide(
+          side: BreastSide.left,
+          density: AcrDensity.c,
+          findings: [finding],
+        ),
+      );
+
+      final report = generateMammographyReport(exam);
+
+      expect(
+        report.descriptionText,
+        contains('ПРАВАЯ МОЛОЧНАЯ ЖЕЛЕЗА:\nУдалена'),
+      );
+      expect(
+        report.conclusionText,
+        contains('Правая молочная железа удалена.'),
+      );
+      expect(report.conclusionText, contains('BIRADS 2 слева.'));
+      expect(report.conclusionText, isNot(contains('справа и слева')));
+      expect(report.conclusionText, isNot(contains('BIRADS 2 справа')));
+    });
+
+    test(
+      'удалённая железа с ACR-D не добавляет рекомендацию УЗИ, если оставшаяся ACR-B',
+      () {
+        final exam = MammographyExam(
+          right: const BreastExamSide(
+            side: BreastSide.right,
+            density: AcrDensity.b,
+          ),
+          left: const BreastExamSide(
+            side: BreastSide.left,
+            density: AcrDensity.d,
+            isRemoved: true,
+          ),
+        );
+
+        final report = generateMammographyReport(exam);
+
+        expect(
+          report.recommendationText,
+          isNot(contains('УЗИ молочных желёз')),
         );
       },
     );

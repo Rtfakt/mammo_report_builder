@@ -17,8 +17,8 @@ GeneratedReport generateMammographyReport(MammographyExam exam) {
   final leftDescription = _buildSideDescription(exam.left);
 
   final descriptionText =
-      '${exam.right.side.fullLabel}:\n$rightDescription\n\n'
-      '${exam.left.side.fullLabel}:\n$leftDescription';
+      '${_sideHeading(exam.right)}:\n$rightDescription\n\n'
+      '${_sideHeading(exam.left)}:\n$leftDescription';
 
   final conclusionText = _buildConclusion(exam);
   final recommendationText = _buildRecommendations(exam);
@@ -44,7 +44,12 @@ GeneratedReport generateMammographyReport(MammographyExam exam) {
   );
 }
 
+String _sideHeading(BreastExamSide side) =>
+    side.isRemoved ? side.side.removedHeading : side.side.fullLabel;
+
 String _buildSideDescription(BreastExamSide side) {
+  if (side.isRemoved) return 'Удалена';
+
   final slots = <DescriptionSlot, String>{
     for (final slot in DescriptionSlot.values)
       slot: slot.defaultText(side.density),
@@ -98,11 +103,33 @@ BiRadsCategory? _maxCategory(BreastExamSide side) {
 }
 
 String _buildConclusion(MammographyExam exam) {
-  final rightCat = _maxCategory(exam.right);
-  final leftCat = _maxCategory(exam.left);
+  final rightActive = !exam.right.isRemoved;
+  final leftActive = !exam.left.isRemoved;
+  final rightCat = rightActive ? _maxCategory(exam.right) : null;
+  final leftCat = leftActive ? _maxCategory(exam.left) : null;
+
+  final removedSentences = [
+    if (exam.right.isRemoved) exam.right.side.removedConclusionSentence,
+    if (exam.left.isRemoved) exam.left.side.removedConclusionSentence,
+  ];
+
+  if (!rightActive && !leftActive) {
+    return removedSentences.join(' ');
+  }
+
+  final biRadsLine = _biRadsLine(
+    rightActive: rightActive,
+    leftActive: leftActive,
+    rightCat: rightCat,
+    leftCat: leftCat,
+  );
 
   if (rightCat == null && leftCat == null) {
-    return 'Без очаговой патологии.\nBIRADS 1 справа и слева.';
+    return [
+      ...removedSentences,
+      'Без очаговой патологии.',
+      biRadsLine,
+    ].join('\n');
   }
 
   // Собираем тексты находок, дедуплицируя одинаковые строки
@@ -110,45 +137,65 @@ String _buildConclusion(MammographyExam exam) {
   // combineBilateralSides склеиваются в «справа и слева».
   final findingTexts = <String>[];
   final consumedLeft = <int>{};
+  final leftFindings = leftActive
+      ? exam.left.findings
+      : const <SelectedFinding>[];
 
-  for (final finding in exam.right.findings) {
-    final text = _conclusionTextFor(
-      finding,
-      side: exam.right.side,
-      leftFindings: exam.left.findings,
-      consumedLeft: consumedLeft,
-    );
-    if (text != null && !findingTexts.contains(text)) {
-      findingTexts.add(text);
+  if (rightActive) {
+    for (final finding in exam.right.findings) {
+      final text = _conclusionTextFor(
+        finding,
+        side: exam.right.side,
+        leftFindings: leftFindings,
+        consumedLeft: consumedLeft,
+      );
+      if (text != null && !findingTexts.contains(text)) {
+        findingTexts.add(text);
+      }
     }
   }
 
-  for (var i = 0; i < exam.left.findings.length; i++) {
-    if (consumedLeft.contains(i)) continue;
-    final finding = exam.left.findings[i];
-    final text = finding.findingType.conclusionFor(
-      sideLabel: exam.left.side.genitiveLabel,
-      sidesAdverb: 'слева',
-      quadrant: finding.quadrant,
-      size: finding.size,
-      calcificationDistribution: finding.calcificationDistribution,
-      calcificationTypes: finding.calcificationTypes,
-      implantPlacement: finding.implantPlacement,
-    );
-    if (text != null && !findingTexts.contains(text)) {
-      findingTexts.add(text);
+  if (leftActive) {
+    for (var i = 0; i < exam.left.findings.length; i++) {
+      if (consumedLeft.contains(i)) continue;
+      final finding = exam.left.findings[i];
+      final text = finding.findingType.conclusionFor(
+        sideLabel: exam.left.side.genitiveLabel,
+        sidesAdverb: 'слева',
+        quadrant: finding.quadrant,
+        size: finding.size,
+        calcificationDistribution: finding.calcificationDistribution,
+        calcificationTypes: finding.calcificationTypes,
+        implantPlacement: finding.implantPlacement,
+      );
+      if (text != null && !findingTexts.contains(text)) {
+        findingTexts.add(text);
+      }
     }
   }
 
-  final rightLabel = rightCat?.code ?? 'BIRADS 1';
-  final leftLabel = leftCat?.code ?? 'BIRADS 1';
-  final biRadsLine = rightLabel == leftLabel
-      ? '$rightLabel справа и слева.'
-      : '$rightLabel справа.\n$leftLabel слева.';
+  final body = [...removedSentences, ...findingTexts].join(' ');
 
-  if (findingTexts.isEmpty) return biRadsLine;
+  if (body.isEmpty) return biRadsLine;
+  return '$body\n$biRadsLine';
+}
 
-  return '${findingTexts.join(' ')}\n$biRadsLine';
+String _biRadsLine({
+  required bool rightActive,
+  required bool leftActive,
+  required BiRadsCategory? rightCat,
+  required BiRadsCategory? leftCat,
+}) {
+  if (rightActive && leftActive) {
+    final rightLabel = rightCat?.code ?? 'BIRADS 1';
+    final leftLabel = leftCat?.code ?? 'BIRADS 1';
+    return rightLabel == leftLabel
+        ? '$rightLabel справа и слева.'
+        : '$rightLabel справа.\n$leftLabel слева.';
+  }
+  if (rightActive) return '${rightCat?.code ?? 'BIRADS 1'} справа.';
+  if (leftActive) return '${leftCat?.code ?? 'BIRADS 1'} слева.';
+  return '';
 }
 
 String? _conclusionTextFor(
@@ -197,28 +244,32 @@ String _buildRecommendations(MammographyExam exam) {
   final recommendations = <String>{};
   final followUps = <String>{};
 
-  if (exam.right.density.requiresAdjunctUltrasound ||
-      exam.left.density.requiresAdjunctUltrasound) {
+  final activeSides = [
+    if (!exam.right.isRemoved) exam.right,
+    if (!exam.left.isRemoved) exam.left,
+  ];
+
+  if (activeSides.any((s) => s.density.requiresAdjunctUltrasound)) {
     recommendations.add(
       'УЗИ молочных желёз (рентгенологически плотные железы).',
     );
   }
 
-  for (final side in [exam.right, exam.left]) {
+  for (final side in activeSides) {
     for (final finding in side.findings) {
       final rec = finding.findingType.recommendationFragment;
       if (rec != null) recommendations.add(rec);
     }
   }
 
-  // followUpText берётся из максимальной категории BI-RADS каждой стороны
-  for (final side in [exam.right, exam.left]) {
+  // followUpText берётся из максимальной категории BI-RADS каждой оставшейся стороны
+  for (final side in activeSides) {
     final cat = _maxCategory(side);
     if (cat?.followUpText != null) followUps.add(cat!.followUpText!);
   }
 
   // Если патологии нет — стандартный интервал контроля 1 год
-  if (exam.right.findings.isEmpty && exam.left.findings.isEmpty) {
+  if (activeSides.every((s) => s.findings.isEmpty)) {
     followUps.add('Динамический контроль через 1 год.');
   }
 

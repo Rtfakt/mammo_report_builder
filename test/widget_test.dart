@@ -1,9 +1,12 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mammo_report_builder/main.dart';
 
 void main() {
-  testWidgets('приложение запускается и показывает обе вкладки', (WidgetTester tester) async {
+  testWidgets('приложение запускается и показывает обе вкладки', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const MammoReportBuilderApp());
     await tester.pumpAndSettle();
 
@@ -13,13 +16,27 @@ void main() {
     expect(find.text('Слева'), findsOneWidget);
   });
 
-  testWidgets('добавление находки "Норма" не ломает UI', (WidgetTester tester) async {
+  testWidgets('крестик на карточке отмечает железу как удалённую', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(const MammoReportBuilderApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Добавить').first);
+    final closeButton = find.byTooltip('Молочная железа удалена').first;
+    await tester.ensureVisible(closeButton);
+    await tester.tap(closeButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('Норма'), findsWidgets);
+    expect(find.text('Молочная железа удалена'), findsOneWidget);
+    expect(
+      find.textContaining('Правая молочная железа удалена.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('BIRADS 1 слева.'), findsOneWidget);
   });
 }

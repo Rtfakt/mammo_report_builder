@@ -37,17 +37,25 @@ class AddFindingResult {
 Future<AddFindingResult?> showAddFindingDialog(
   BuildContext context, {
   required BreastSide currentSide,
+  Set<BreastSide> unavailableSides = const {},
 }) {
   return showDialog<AddFindingResult>(
     context: context,
-    builder: (context) => _AddFindingDialog(currentSide: currentSide),
+    builder: (context) => _AddFindingDialog(
+      currentSide: currentSide,
+      unavailableSides: unavailableSides,
+    ),
   );
 }
 
 class _AddFindingDialog extends StatefulWidget {
   final BreastSide currentSide;
+  final Set<BreastSide> unavailableSides;
 
-  const _AddFindingDialog({required this.currentSide});
+  const _AddFindingDialog({
+    required this.currentSide,
+    this.unavailableSides = const {},
+  });
 
   @override
   State<_AddFindingDialog> createState() => _AddFindingDialogState();
@@ -145,9 +153,14 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
 
   void _applyFindingDefaults(FindingType finding) {
     _selectedFinding = finding;
-    _sides = finding.defaultsToBothSides
-        ? {BreastSide.right, BreastSide.left}
-        : {widget.currentSide};
+    if (finding.defaultsToBothSides) {
+      _sides = {
+        for (final side in BreastSide.values)
+          if (!widget.unavailableSides.contains(side)) side,
+      };
+    } else {
+      _sides = {widget.currentSide};
+    }
     _implantPlacement = finding.requiresImplantPlacement
         ? ImplantPlacement.retromammary
         : null;
@@ -337,18 +350,21 @@ class _AddFindingDialogState extends State<_AddFindingDialog> {
             spacing: 8,
             children: BreastSide.values.map((side) {
               final isChecked = _sides.contains(side);
+              final isUnavailable = widget.unavailableSides.contains(side);
               return FilterChip(
                 label: Text(side.label),
                 selected: isChecked,
-                onSelected: (checked) {
-                  setState(() {
-                    if (checked) {
-                      _sides.add(side);
-                    } else {
-                      _sides.remove(side);
-                    }
-                  });
-                },
+                onSelected: isUnavailable
+                    ? null
+                    : (checked) {
+                        setState(() {
+                          if (checked) {
+                            _sides.add(side);
+                          } else {
+                            _sides.remove(side);
+                          }
+                        });
+                      },
               );
             }).toList(),
           ),

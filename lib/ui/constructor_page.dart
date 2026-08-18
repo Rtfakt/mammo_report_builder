@@ -87,7 +87,15 @@ class ConstructorPage extends StatelessWidget {
   }
 
   Future<void> _addFinding(BuildContext context, BreastSide side) async {
-    final result = await showAddFindingDialog(context, currentSide: side);
+    final exam = controller.exam;
+    final result = await showAddFindingDialog(
+      context,
+      currentSide: side,
+      unavailableSides: {
+        if (exam.right.isRemoved) BreastSide.right,
+        if (exam.left.isRemoved) BreastSide.left,
+      },
+    );
     if (result == null) return;
 
     final finding = SelectedFinding(
@@ -102,7 +110,10 @@ class ConstructorPage extends StatelessWidget {
     controller.update((exam) {
       var updated = exam;
       for (final target in result.sides) {
-        updated = updated.sideUpdated(target, (s) => s.addFinding(finding));
+        updated = updated.sideUpdated(target, (s) {
+          if (s.isRemoved) return s;
+          return s.addFinding(finding);
+        });
       }
       return updated;
     });
@@ -202,6 +213,10 @@ class _ControlsPanel extends StatelessWidget {
           onRemoveFinding: (i) => controller.update(
             (e) => e.sideUpdated(BreastSide.right, (s) => s.removeFindingAt(i)),
           ),
+          onRemovedChanged: (removed) => controller.update(
+            (e) =>
+                e.sideUpdated(BreastSide.right, (s) => s.withRemoved(removed)),
+          ),
         ),
         const SizedBox(height: 12),
         SidePanel(
@@ -212,6 +227,10 @@ class _ControlsPanel extends StatelessWidget {
           onAddFinding: () => onAddFinding(BreastSide.left),
           onRemoveFinding: (i) => controller.update(
             (e) => e.sideUpdated(BreastSide.left, (s) => s.removeFindingAt(i)),
+          ),
+          onRemovedChanged: (removed) => controller.update(
+            (e) =>
+                e.sideUpdated(BreastSide.left, (s) => s.withRemoved(removed)),
           ),
         ),
       ],
@@ -273,17 +292,20 @@ class _QuickConclusionsCard extends StatelessWidget {
 
   void _apply(FindingType finding) {
     controller.update((exam) {
-      final side = BreastExamSide(
-        side: exam.right.side,
-        density: exam.right.density,
-      );
-      final sideLeft = BreastExamSide(
-        side: exam.left.side,
-        density: exam.left.density,
-      );
+      final selected = SelectedFinding(findingType: finding);
       return exam.copyWith(
-        right: side.addFinding(SelectedFinding(findingType: finding)),
-        left: sideLeft.addFinding(SelectedFinding(findingType: finding)),
+        right: exam.right.isRemoved
+            ? exam.right
+            : BreastExamSide(
+                side: exam.right.side,
+                density: exam.right.density,
+              ).addFinding(selected),
+        left: exam.left.isRemoved
+            ? exam.left
+            : BreastExamSide(
+                side: exam.left.side,
+                density: exam.left.density,
+              ).addFinding(selected),
       );
     });
   }
@@ -291,8 +313,12 @@ class _QuickConclusionsCard extends StatelessWidget {
   void _setNorma() {
     controller.update(
       (exam) => exam.copyWith(
-        right: exam.right.copyWith(findings: const []),
-        left: exam.left.copyWith(findings: const []),
+        right: exam.right.isRemoved
+            ? exam.right
+            : exam.right.copyWith(findings: const []),
+        left: exam.left.isRemoved
+            ? exam.left
+            : exam.left.copyWith(findings: const []),
       ),
     );
   }
