@@ -70,9 +70,10 @@ final List<FindingType> mammographyFindingCatalog = [
     label: 'Интрамаммарные лимфатические узлы',
     isPathology: true,
     requiresLocalization: true,
+    requiresSize: true,
     descriptionOverrides: {
       DescriptionSlot.lymphNodes:
-          'Определяются интрамаммарные лимфатические узлы в проекции {quadrant}.',
+          'Определяются интрамаммарные лимфатические узлы размером до {size} в проекции {quadrant}.',
     },
     category: BiRadsCategory.birads2,
     conclusionFragment:
@@ -209,7 +210,7 @@ final List<FindingType> mammographyFindingCatalog = [
         'Втяжение соска {side} молочной железы без видимого объёмного образования.',
   ),
 
-  // ───────────────────────── BI-RADS 4а ─────────────────────────
+  // ───────────────────────── BI-RADS 4a ─────────────────────────
   const FindingType(
     id: 'birads4a_atypical_fibroadenoma',
     label: 'Образование с частично размытым контуром (атипичная фиброаденома)',
@@ -265,7 +266,7 @@ final List<FindingType> mammographyFindingCatalog = [
     conclusionFragment: 'Абсцесс {side} молочной железы в проекции.',
   ),
 
-  // ───────────────────────── BI-RADS 4б ─────────────────────────
+  // ───────────────────────── BI-RADS 4b ─────────────────────────
   const FindingType(
     id: 'birads4b_amorphous_calcifications',
     label: 'Сгруппированные аморфные/плеоморфные микрокальцинаты',
@@ -335,7 +336,7 @@ final List<FindingType> mammographyFindingCatalog = [
         'Рентген-картина увеличенных лимфатических узлов {side} молочной железы.',
   ),
 
-  // ───────────────────────── BI-RADS 4с ─────────────────────────
+  // ───────────────────────── BI-RADS 4c ─────────────────────────
   const FindingType(
     id: 'birads4c_pleomorphic_calcifications',
     label: 'Скопление плеоморфных микрокальцинатов (нарастание в динамике)',

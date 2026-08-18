@@ -199,6 +199,41 @@ void main() {
     );
 
     test(
+      'интрамаммарные лимфоузлы подставляют размер и квадрант в описание',
+      () {
+        final finding = SelectedFinding(
+          findingType: findingById('birads2_intramammary_ln'),
+          quadrant: Quadrant.upperOuter,
+          size: '8 мм',
+        );
+        final exam = MammographyExam(
+          right: BreastExamSide(
+            side: BreastSide.right,
+            density: AcrDensity.b,
+            findings: [finding],
+          ),
+          left: const BreastExamSide(
+            side: BreastSide.left,
+            density: AcrDensity.b,
+          ),
+        );
+
+        final report = generateMammographyReport(exam);
+
+        expect(
+          report.descriptionText,
+          contains(
+            'Определяются интрамаммарные лимфатические узлы размером до 8 мм в проекции верхне-наружного квадранта.',
+          ),
+        );
+        expect(
+          report.conclusionText,
+          contains('Интрамаммарные лимфатические узлы правой молочной железы.'),
+        );
+      },
+    );
+
+    test(
       'ретромаммарные импланты с обеих сторон -> описание и заключение справа и слева',
       () {
         final finding = SelectedFinding(
