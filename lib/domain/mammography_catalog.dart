@@ -33,6 +33,7 @@ final List<FindingType> mammographyFindingCatalog = [
           'Структура представлена диффузным чередованием фиброзного, железистого и кистозного компонентов, что соответствует фиброзно-кистозным изменениям.',
     },
     category: BiRadsCategory.birads2,
+    recommendationFragment: 'Рекомендовано УЗИ молочных желёз.',
     conclusionFragment: 'Признаки фиброзно-кистозных изменений молочных желёз.',
   ),
 

@@ -403,6 +403,10 @@ void main() {
       expect(report.conclusionText, contains('BIRADS 2 слева.'));
       expect(report.conclusionText, isNot(contains('справа и слева')));
       expect(report.conclusionText, isNot(contains('BIRADS 2 справа')));
+      expect(
+        report.recommendationText,
+        contains('Рекомендовано УЗИ молочных желёз.'),
+      );
     });
 
     test(
