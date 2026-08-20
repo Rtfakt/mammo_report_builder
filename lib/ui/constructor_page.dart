@@ -345,24 +345,30 @@ class _QuickConclusionsCard extends StatelessWidget {
               ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            Row(
               children: [
-                OutlinedButton(
-                  style: _quickConclusionButtonStyle,
-                  onPressed: _setNorma,
-                  child: const Text('Норма'),
+                Expanded(
+                  child: OutlinedButton(
+                    style: _quickConclusionButtonStyle,
+                    onPressed: _setNorma,
+                    child: const Text('Норма'),
+                  ),
                 ),
-                OutlinedButton(
-                  style: _quickConclusionButtonStyle,
-                  onPressed: () => _apply(fzhi),
-                  child: const Text('ФЖИ'),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    style: _quickConclusionButtonStyle,
+                    onPressed: () => _apply(fzhi),
+                    child: const Text('ФЖИ'),
+                  ),
                 ),
-                OutlinedButton(
-                  style: _quickConclusionButtonStyle,
-                  onPressed: () => _apply(fki),
-                  child: const Text('ФКИ'),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    style: _quickConclusionButtonStyle,
+                    onPressed: () => _apply(fki),
+                    child: const Text('ФКИ'),
+                  ),
                 ),
               ],
             ),
