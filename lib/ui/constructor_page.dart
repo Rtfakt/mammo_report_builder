@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../domain/acr_density.dart';
 import '../domain/breast_exam_side.dart';
 import '../domain/breast_side.dart';
 import '../domain/exam_controller.dart';
@@ -12,6 +11,7 @@ import '../domain/mammography_exam.dart';
 import '../domain/report_generator.dart';
 import '../domain/selected_finding.dart';
 import 'widgets/add_finding_dialog.dart';
+import 'widgets/density_selector.dart';
 import 'widgets/side_panel.dart';
 
 /// Главный экран конструктора.
@@ -269,13 +269,10 @@ class _DensityCard extends StatelessWidget {
             ),
             if (exam.sameDensityBothSides) ...[
               const SizedBox(height: 12),
-              SegmentedButton<AcrDensity>(
-                segments: AcrDensity.values
-                    .map((d) => ButtonSegment(value: d, label: Text(d.code)))
-                    .toList(),
-                selected: {exam.right.density},
-                onSelectionChanged: (s) =>
-                    controller.update((e) => e.withDensity(s.first)),
+              DensitySelector(
+                value: exam.right.density,
+                onChanged: (density) =>
+                    controller.update((e) => e.withDensity(density)),
               ),
             ],
           ],
@@ -284,6 +281,12 @@ class _DensityCard extends StatelessWidget {
     );
   }
 }
+
+const _quickConclusionButtonStyle = ButtonStyle(
+  minimumSize: WidgetStatePropertyAll(Size(64, 80)),
+  visualDensity: VisualDensity.standard,
+  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+);
 
 class _QuickConclusionsCard extends StatelessWidget {
   final ExamController controller;
@@ -333,7 +336,7 @@ class _QuickConclusionsCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               'Частые заключения',
@@ -347,14 +350,17 @@ class _QuickConclusionsCard extends StatelessWidget {
               runSpacing: 8,
               children: [
                 OutlinedButton(
+                  style: _quickConclusionButtonStyle,
                   onPressed: _setNorma,
                   child: const Text('Норма'),
                 ),
                 OutlinedButton(
+                  style: _quickConclusionButtonStyle,
                   onPressed: () => _apply(fzhi),
                   child: const Text('ФЖИ'),
                 ),
                 OutlinedButton(
+                  style: _quickConclusionButtonStyle,
                   onPressed: () => _apply(fki),
                   child: const Text('ФКИ'),
                 ),

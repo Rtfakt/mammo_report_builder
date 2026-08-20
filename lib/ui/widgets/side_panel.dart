@@ -4,6 +4,7 @@ import '../../domain/acr_density.dart';
 import '../../domain/breast_exam_side.dart';
 import '../../domain/quadrant.dart';
 import '../../domain/selected_finding.dart';
+import 'density_selector.dart';
 
 /// Панель одной стороны молочной железы: плотность (если не управляется
 /// общим переключателем "одинаково с обеих сторон") + список находок.
@@ -87,7 +88,7 @@ class SidePanel extends StatelessWidget {
             style: Theme.of(context).textTheme.labelLarge,
           ),
           const SizedBox(height: 8),
-          _DensitySelector(value: data.density, onChanged: onDensityChanged),
+          DensitySelector(value: data.density, onChanged: onDensityChanged),
           const SizedBox(height: 16),
         ],
         Row(
@@ -146,22 +147,4 @@ class SidePanel extends StatelessWidget {
   }
 
   String _shortQuadrant(Quadrant q) => q.label.split(' (').first;
-}
-
-class _DensitySelector extends StatelessWidget {
-  final AcrDensity value;
-  final ValueChanged<AcrDensity> onChanged;
-
-  const _DensitySelector({required this.value, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<AcrDensity>(
-      segments: AcrDensity.values
-          .map((d) => ButtonSegment(value: d, label: Text(d.code)))
-          .toList(),
-      selected: {value},
-      onSelectionChanged: (selection) => onChanged(selection.first),
-    );
-  }
 }
