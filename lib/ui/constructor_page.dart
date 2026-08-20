@@ -39,7 +39,7 @@ class ConstructorPage extends StatelessWidget {
 
             final leftPanel = _ReportPanel(
               report: report,
-              onCopy: () => _copy(context, report.fullText),
+              onCopy: () => _copy(context, report.textForClipboard),
               onSave: onSave == null ? null : () => onSave!(report),
             );
 

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../data/database.dart';
+import '../domain/generated_report.dart';
 import '../domain/mammography_exam.dart';
 
 /// Список ранее сохранённых заключений: просмотр текста, копирование,
@@ -57,7 +58,10 @@ class HistoryPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SelectableText(report.fullText, style: const TextStyle(fontFamily: 'monospace')),
+                        SelectableText(
+                          report.fullText,
+                          style: const TextStyle(fontFamily: 'monospace'),
+                        ),
                         const SizedBox(height: 12),
                         Wrap(
                           spacing: 8,
@@ -65,7 +69,8 @@ class HistoryPage extends StatelessWidget {
                             OutlinedButton.icon(
                               onPressed: () => onLoadDraft(
                                 MammographyExam.fromJson(
-                                  jsonDecode(report.examJson) as Map<String, dynamic>,
+                                  jsonDecode(report.examJson)
+                                      as Map<String, dynamic>,
                                 ),
                               ),
                               icon: const Icon(Icons.open_in_new, size: 18),
@@ -73,9 +78,17 @@ class HistoryPage extends StatelessWidget {
                             ),
                             OutlinedButton.icon(
                               onPressed: () {
-                                Clipboard.setData(ClipboardData(text: report.fullText));
+                                Clipboard.setData(
+                                  ClipboardData(
+                                    text: reportTextForClipboard(
+                                      report.fullText,
+                                    ),
+                                  ),
+                                );
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Текст скопирован')),
+                                  const SnackBar(
+                                    content: Text('Текст скопирован'),
+                                  ),
                                 );
                               },
                               icon: const Icon(Icons.copy, size: 18),
