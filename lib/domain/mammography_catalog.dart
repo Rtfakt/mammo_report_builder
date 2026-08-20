@@ -63,8 +63,7 @@ final List<FindingType> mammographyFindingCatalog = [
           'Кальцинаты доброкачественные - да (распределение {distribution}, {calcificationType}), злокачественные - нет.',
     },
     category: BiRadsCategory.birads2,
-    conclusionFragment:
-        'Доброкачественные обызвествления молочных желёз ({calcificationType}, распределение {distribution}).',
+    conclusionFragment: 'Доброкачественные обызвествления молочных желёз.',
   ),
   const FindingType(
     id: 'birads2_intramammary_ln',
