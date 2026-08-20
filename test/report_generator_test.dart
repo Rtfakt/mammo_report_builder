@@ -432,5 +432,81 @@ void main() {
         );
       },
     );
+
+    test('без находок — ни один сегмент предпросмотра не выделен', () {
+      final exam = MammographyExam(
+        right: const BreastExamSide(
+          side: BreastSide.right,
+          density: AcrDensity.b,
+        ),
+        left: const BreastExamSide(
+          side: BreastSide.left,
+          density: AcrDensity.b,
+        ),
+      );
+
+      final report = generateMammographyReport(exam);
+
+      expect(report.previewSegments, isNotEmpty);
+      expect(report.previewSegments.every((s) => !s.emphasized), isTrue);
+      expect(
+        report.previewSegments.map((s) => s.text).join(),
+        report.fullText,
+      );
+    });
+
+    test(
+      'несколько находок — каждая переопределённая фраза описания выделена',
+      () {
+        final fzhi = SelectedFinding(
+          findingType: findingById('fatty_involution'),
+        );
+        final mass = SelectedFinding(
+          findingType: findingById('birads2_benign_mass'),
+          quadrant: Quadrant.upperOuter,
+          size: '12 мм',
+        );
+        final exam = MammographyExam(
+          right: BreastExamSide(
+            side: BreastSide.right,
+            density: AcrDensity.b,
+            findings: [fzhi, mass],
+          ),
+          left: const BreastExamSide(
+            side: BreastSide.left,
+            density: AcrDensity.b,
+          ),
+        );
+
+        final report = generateMammographyReport(exam);
+        final emphasized = report.previewSegments
+            .where((s) => s.emphasized)
+            .map((s) => s.text)
+            .toList();
+
+        expect(emphasized, hasLength(2));
+        expect(
+          emphasized,
+          contains(
+            'Структура представлена преимущественно элементами жировой ткани с участками фиброза, что соответствует фиброзно-жировой инволюции.',
+          ),
+        );
+        expect(
+          emphasized,
+          contains(
+            'В проекции верхне-наружного квадранта определяется округлое образование с четкими ровными контурами размером до 12 мм ',
+          ),
+        );
+        for (final text in emphasized) {
+          expect(report.descriptionText, contains(text.trim()));
+        }
+        expect(report.fullText, isNot(contains('**')));
+        expect(report.textForClipboard, isNot(contains('**')));
+        expect(
+          report.previewSegments.map((s) => s.text).join(),
+          report.fullText,
+        );
+      },
+    );
   });
 }

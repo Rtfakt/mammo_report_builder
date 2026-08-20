@@ -13,12 +13,17 @@ import 'selected_finding.dart';
 /// покрывается юнит-тестами (см. test/report_generator_test.dart) и не
 /// зависит от того, как именно UI собрал [MammographyExam].
 GeneratedReport generateMammographyReport(MammographyExam exam) {
-  final rightDescription = _buildSideDescription(exam.right);
-  final leftDescription = _buildSideDescription(exam.left);
+  final rightSegments = _buildSideDescriptionSegments(exam.right);
+  final leftSegments = _buildSideDescriptionSegments(exam.left);
+  final rightDescription = _joinSegmentTexts(rightSegments);
+  final leftDescription = _joinSegmentTexts(leftSegments);
+
+  final rightHeading = _sideHeading(exam.right);
+  final leftHeading = _sideHeading(exam.left);
 
   final descriptionText =
-      '${_sideHeading(exam.right)}:\n$rightDescription\n\n'
-      '${_sideHeading(exam.left)}:\n$leftDescription';
+      '$rightHeading:\n$rightDescription\n\n'
+      '$leftHeading:\n$leftDescription';
 
   final conclusionText = _buildConclusion(exam);
   final recommendationText = _buildRecommendations(exam);
@@ -36,24 +41,46 @@ GeneratedReport generateMammographyReport(MammographyExam exam) {
       ..writeln(recommendationText);
   }
 
+  final fullText = buffer.toString().trim();
+
+  final previewSegments = <ReportTextSegment>[
+    ReportTextSegment('$rightHeading:\n'),
+    ...rightSegments,
+    const ReportTextSegment('\n\n'),
+    ReportTextSegment('$leftHeading:\n'),
+    ...leftSegments,
+    ReportTextSegment('\n\nЗАКЛЮЧЕНИЕ:\n$conclusionText'),
+    if (recommendationText.isNotEmpty)
+      ReportTextSegment('\n\nРЕКОМЕНДОВАНО:\n$recommendationText'),
+  ];
+
   return GeneratedReport(
     descriptionText: descriptionText,
     conclusionText: conclusionText,
     recommendationText: recommendationText,
-    fullText: buffer.toString().trim(),
+    fullText: fullText,
+    previewSegments: previewSegments,
   );
 }
 
 String _sideHeading(BreastExamSide side) =>
     side.isRemoved ? side.side.removedHeading : side.side.fullLabel;
 
-String _buildSideDescription(BreastExamSide side) {
-  if (side.isRemoved) return 'Удалена';
+String _joinSegmentTexts(List<ReportTextSegment> segments) =>
+    segments.map((s) => s.text).join();
+
+/// Собирает описание стороны: дефолтные фразы и переопределения находок.
+/// Переопределённые слоты помечаются [ReportTextSegment.emphasized].
+List<ReportTextSegment> _buildSideDescriptionSegments(BreastExamSide side) {
+  if (side.isRemoved) {
+    return const [ReportTextSegment('Удалена')];
+  }
 
   final slots = <DescriptionSlot, String>{
     for (final slot in DescriptionSlot.values)
       slot: slot.defaultText(side.density),
   };
+  final overridden = <DescriptionSlot>{};
 
   for (final finding in side.findings) {
     for (final slot in DescriptionSlot.values) {
@@ -67,27 +94,31 @@ String _buildSideDescription(BreastExamSide side) {
       );
       if (override != null) {
         slots[slot] = override;
+        overridden.add(slot);
       }
     }
     if (finding.calcificationTypes.contains(BenignCalcificationType.vascular)) {
       slots[DescriptionSlot.vesselCalcification] = 'Обызвествления сосудов да.';
+      overridden.add(DescriptionSlot.vesselCalcification);
     }
   }
 
-  final sentences = [
-    side.density.densitySentence,
-    slots[DescriptionSlot.skin]!,
-    slots[DescriptionSlot.structure]!,
-    slots[DescriptionSlot.implants]!,
-    slots[DescriptionSlot.calcifications]!,
-    slots[DescriptionSlot.asymmetry]!,
-    slots[DescriptionSlot.nodules]!,
-    slots[DescriptionSlot.architecture]!,
-    slots[DescriptionSlot.lymphNodes]!,
-    slots[DescriptionSlot.vesselCalcification]!,
+  final parts = <({String text, bool emphasized})>[
+    (text: side.density.densitySentence, emphasized: false),
+    for (final slot in DescriptionSlot.values)
+      (text: slots[slot]!, emphasized: overridden.contains(slot)),
   ];
 
-  return sentences.where((s) => s.trim().isNotEmpty).join(' ');
+  final segments = <ReportTextSegment>[];
+  for (final part in parts) {
+    final text = part.text.trim().isEmpty ? '' : part.text;
+    if (text.isEmpty) continue;
+    if (segments.isNotEmpty) {
+      segments.add(const ReportTextSegment(' '));
+    }
+    segments.add(ReportTextSegment(text, emphasized: part.emphasized));
+  }
+  return segments;
 }
 
 /// Определяет наивысшую категорию BI-RADS среди патологических находок стороны.

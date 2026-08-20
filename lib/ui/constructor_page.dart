@@ -151,9 +151,22 @@ class _ReportPanel extends StatelessWidget {
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const Divider(height: 20),
-            SelectableText(
-              report.fullText,
-              style: const TextStyle(fontFamily: 'monospace', height: 1.4),
+            SelectableText.rich(
+              TextSpan(
+                style: const TextStyle(fontFamily: 'monospace', height: 1.4),
+                children: [
+                  for (final segment in report.previewSegments)
+                    TextSpan(
+                      text: segment.text,
+                      style: segment.emphasized
+                          ? const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontStyle: FontStyle.italic,
+                            )
+                          : null,
+                    ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             Wrap(
