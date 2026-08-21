@@ -123,6 +123,41 @@ void main() {
     );
 
     test(
+      'BIRADS 2 с одной стороны и 4a с другой -> follow-up только от наивысшей категории',
+      () {
+        final rightFinding = SelectedFinding(
+          findingType: findingById('fatty_involution'),
+        );
+        final leftFinding = SelectedFinding(
+          findingType: findingById('birads4a_atypical_fibroadenoma'),
+          quadrant: Quadrant.upperOuter,
+          size: '10 мм',
+        );
+        final exam = MammographyExam(
+          right: BreastExamSide(
+            side: BreastSide.right,
+            density: AcrDensity.b,
+            findings: [rightFinding],
+          ),
+          left: BreastExamSide(
+            side: BreastSide.left,
+            density: AcrDensity.b,
+            findings: [leftFinding],
+          ),
+        );
+
+        final report = generateMammographyReport(exam);
+
+        expect(report.conclusionText, contains('BIRADS 2 справа.'));
+        expect(report.conclusionText, contains('BIRADS 4a слева.'));
+        expect(
+          report.recommendationText,
+          isNot(contains('Динамический контроль через 1 год.')),
+        );
+      },
+    );
+
+    test(
       'разные находки на разных сторонах -> две отдельные строки заключения',
       () {
         final rightFinding = SelectedFinding(

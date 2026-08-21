@@ -293,10 +293,16 @@ String _buildRecommendations(MammographyExam exam) {
     }
   }
 
-  // followUpText берётся из максимальной категории BI-RADS каждой оставшейся стороны
+  // followUpText — только от наивысшей категории по обеим железам,
+  // а не сумма follow-up с каждой стороны (2+4a → текст 4a, не 2).
+  BiRadsCategory? globalMax;
   for (final side in activeSides) {
     final cat = _maxCategory(side);
-    if (cat?.followUpText != null) followUps.add(cat!.followUpText!);
+    if (cat == null) continue;
+    if (globalMax == null || cat.rank > globalMax.rank) globalMax = cat;
+  }
+  if (globalMax?.followUpText != null) {
+    followUps.add(globalMax!.followUpText!);
   }
 
   // Если патологии нет — стандартный интервал контроля 1 год
