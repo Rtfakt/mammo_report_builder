@@ -58,6 +58,7 @@ final List<FindingType> mammographyFindingCatalog = [
     isPathology: true,
     requiresLocalization: false,
     requiresCalcificationDetails: true,
+    defaultsToBothSides: true,
     descriptionOverrides: {
       DescriptionSlot.calcifications:
           'Кальцинаты доброкачественные - да (распределение {distribution}, {calcificationType}), злокачественные - нет.',
